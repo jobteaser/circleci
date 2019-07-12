@@ -1,0 +1,85 @@
+version: 2.1
+
+description: |
+  Standard jobs for services using the go-service Go module.
+
+executors:
+  ci:
+    docker:
+      - image: "jobteaser/go-service-ci:latest"
+        auth:
+          username: "$DOCKER_LOGIN"
+          password: "$DOCKER_PASSWORD"
+
+commands:
+  configure_ssh:
+    steps:
+      - run:
+          name: "Configure SSH"
+          command: |
+            mkdir -p ~/.ssh
+            ssh-keyscan github.com > ~/.ssh/known_hosts
+
+  configure_git:
+    steps:
+      - run:
+          name: "Configure Git"
+          command: |
+            git config --global url."ssh://git@github.com/".insteadOf "https://github.com/"
+
+  save_go_pkg_cache:
+    steps:
+      - save_cache:
+          key: $CIRCLE_PROJECT_REPONAME-{{ .Branch }}-{{ checksum "go.sum" }}-v1
+          paths:
+            - "/go/pkg"
+
+  restore_go_pkg_cache:
+    steps:
+      - restore_cache:
+          keys:
+            - $CIRCLE_PROJECT_REPONAME-{{ .Branch }}-{{ checksum "go.sum" }}-v1
+
+jobs:
+  test:
+    parameters:
+      workspace:
+        description: "The name of the workspace containing the project."
+        type: string
+        default: "~/workspace"
+    executor: "ci"
+    working_directory: "<<parameters.workspace>>"
+    steps:
+      - configure_ssh
+      - configure_git
+      - restore_go_pkg_cache
+      - run:
+          name: "Run static analysis"
+          command: |
+            make vet
+      - run:
+          name: "Run tests"
+          command: |
+            make test
+      - save_go_pkg_cache
+
+  build:
+    parameters:
+      workspace:
+        description: "The name of the workspace containing the project."
+        type: string
+        default: "~/workspace"
+    executor: "ci"
+    working_directory: "<<parameters.workspace>>"
+    steps:
+      - configure_ssh
+      - configure_git
+      - restore_go_pkg_cache
+      - run:
+          name: "Build the project"
+          command: |
+            make build
+      - save_go_pkg_cache
+      - persist_to_workspace:
+          root: "<<parameters.workspace>>"
+          paths: ["."]

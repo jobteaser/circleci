@@ -1,0 +1,46 @@
+version: 2.1
+
+description: |
+  Use Docker in your workflows.
+
+executors:
+  build_docker_image:
+    docker:
+      - image: "circleci/buildpack-deps:latest"
+
+jobs:
+  build_image:
+    parameters:
+      workspace:
+        description: "The name of the workspace containing the project."
+        type: string
+        default: "~/workspace"
+      image-name:
+        description: "The name of the Docker image."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      image-tag:
+        description: "The tag of the Docker image."
+        type: string
+        default: "git-$CIRCLE_SHA1"
+    executor: "build_docker_image"
+    environment:
+      DOCKER_BUILDKIT: "0"
+    working_directory: "<<parameters.workspace>>"
+    steps:
+      - attach_workspace:
+          at: "<<parameters.workspace>>"
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          name: "Login on dockerhub"
+          command: |
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_LOGIN" --password-stdin
+      - run:
+          name: "Build the Docker image"
+          command: |
+            docker build -t <<parameters.image-name>>:<<parameters.image-tag>> .
+      - run:
+          name: "Push the Docker image"
+          command: |
+            docker push <<parameters.image-name>>:<<parameters.image-tag>>
