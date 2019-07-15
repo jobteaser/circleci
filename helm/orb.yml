@@ -48,15 +48,16 @@ jobs:
       helm-value-file-path:
         description: "The path of the extra value file to apply."
         type: string
+    context: "deploy"
     executor: "deploy"
     steps:
       - checkout
       - run:
           name: "Configure the kubernetes client"
-          # TODO insecure-skip-tls-verify=true !
           command: |
+            echo "$K8S_CA_CERT_PREPROD" | base64 -d >/tmp/k8s-ca-cert.pem
             kubectl config set-cluster circleci.cluster \
-              --insecure-skip-tls-verify=true \
+              --certificate-authority=/tmp/k8s-ca-cert.pem \
               --server=<<parameters.kubernetes-server-endpoint>>
             kubectl config set-context circleci.context \
               --cluster=circleci.cluster
