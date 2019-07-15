@@ -3,9 +3,6 @@ version: 2.1
 description: |
   Use Docker in your workflows.
 
-orbs:
-  anchore-engine: "anchore/anchore-engine@1.5.0"
-
 executors:
   build_docker_image:
     docker:
@@ -43,12 +40,6 @@ jobs:
           name: "Build the Docker image"
           command: |
             docker build -t <<parameters.image-name>>:<<parameters.image-tag>> .
-      - anchore-engine/analyze_local_image:
-          image_name: "<<parameters.image-name>>:<<parameters.image-tag>>"
-          policy_failure: true
-      - anchore-engine/parse_reports
-      - store_artifacts:
-          path: "anchore-reports"
       - run:
           name: "Push the Docker image"
           command: |
