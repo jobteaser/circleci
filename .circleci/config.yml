@@ -1,7 +1,7 @@
 version: 2.1
 
 jobs:
-  build:
+  build_and_publish:
     docker:
       - image: "ubuntu:18.04"
 
@@ -25,3 +25,19 @@ jobs:
           name: "Publish development orbs"
           command: |
             make publish-dev
+
+workflows:
+  main:
+    jobs:
+      - build_and_publish
+
+  nightly:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                ["master"]
+    jobs:
+      - build_and_publish
