@@ -10,7 +10,7 @@ jobs:
           name: "Install dependencies"
           command: |
             apt-get update -y
-            apt-get install -y make curl
+            apt-get install -y make curl git
       - run:
           name: "Install the CircleCI command line program"
           command: |
