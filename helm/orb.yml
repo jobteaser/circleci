@@ -48,7 +48,6 @@ jobs:
       helm-value-file-path:
         description: "The path of the extra value file to apply."
         type: string
-    context: "deploy"
     executor: "deploy"
     steps:
       - checkout
