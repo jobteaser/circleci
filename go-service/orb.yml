@@ -52,6 +52,7 @@ jobs:
     steps:
       - configure_ssh
       - configure_git
+      - checkout
       - restore_go_pkg_cache
       - run:
           name: "Run static analysis"
@@ -74,6 +75,7 @@ jobs:
     steps:
       - configure_ssh
       - configure_git
+      - checkout
       - restore_go_pkg_cache
       - run:
           name: "Build the project"
