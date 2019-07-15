@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+
+set -eu
+
+branch=$(git rev-parse --abbrev-ref HEAD)
+
+for orb; do
+    orb_name=$(dirname $orb)
+    orb_ref=jobteaser/$orb_name@dev:$branch
+
+    circleci orb publish $orb $orb_ref
+done

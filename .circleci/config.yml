@@ -21,3 +21,7 @@ jobs:
           name: "Validate orbs"
           command: |
             make validate
+      - run:
+          name: "Publish development orbs"
+          command: |
+            make publish-dev
