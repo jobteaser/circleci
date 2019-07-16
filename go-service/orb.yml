@@ -43,11 +43,15 @@ commands:
 jobs:
   test:
     parameters:
+      executor:
+        description: "The executor to use for the job."
+        type: "executor"
+        default: "ci"
       workspace:
         description: "The name of the workspace containing the project."
-        type: string
+        type: "string"
         default: "~/workspace"
-    executor: "ci"
+    executor: "<<parameters.executor>>"
     working_directory: "<<parameters.workspace>>"
     steps:
       - configure_ssh
@@ -66,11 +70,15 @@ jobs:
 
   build:
     parameters:
+      executor:
+        description: "The executor to use for the job."
+        type: "executor"
+        default: "ci"
       workspace:
         description: "The name of the workspace containing the project."
         type: string
         default: "~/workspace"
-    executor: "ci"
+    executor: "<<parameters.executor>>"
     working_directory: "<<parameters.workspace>>"
     steps:
       - configure_ssh
