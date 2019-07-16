@@ -29,6 +29,7 @@ jobs:
       kubernetes-server-endpoint:
         description: "The URL of the Kubernetes server."
         type: string
+        default: "$K8S_ENDPOINT"
       kubernetes-server-ca-cert:
         description: "The CA certificate of the Kubernetes server."
         type: string
@@ -52,6 +53,7 @@ jobs:
       helm-value-file-path:
         description: "The path of the extra value file to apply."
         type: string
+        default: "./k8s/$CIRCLE_PROJECT_REPONAME/$HELM_VALUE_FILE_NAME"
     executor: "deploy"
     steps:
       - checkout
