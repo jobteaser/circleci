@@ -26,12 +26,12 @@ jobs:
         description: "The Kubernetes namespace."
         type: string
         default: "$CIRCLE_PROJECT_REPONAME"
-      kubernetes-server-endpoint:
-        description: "The URL of the Kubernetes server."
+      kubernetes-endpoint:
+        description: "The URL of the Kubernetes API endpoint."
         type: string
         default: "$K8S_ENDPOINT"
-      kubernetes-server-ca-cert:
-        description: "The CA certificate of the Kubernetes server."
+      kubernetes-ca-cert:
+        description: "The CA certificate of the Kubernetes API server."
         type: string
         default: "$K8S_CA_CERT_PREPROD"
       kubernetes-deploy-timeout:
@@ -60,10 +60,10 @@ jobs:
       - run:
           name: "Configure the kubernetes client"
           command: |
-            echo "<<parameters.kubernetes-server-ca-cert>>" | base64 -d >/tmp/k8s-ca-cert.pem
+            echo "<<parameters.kubernetes-ca-cert>>" | base64 -d >/tmp/k8s-ca-cert.pem
             kubectl config set-cluster circleci.cluster \
               --certificate-authority=/tmp/k8s-ca-cert.pem \
-              --server=<<parameters.kubernetes-server-endpoint>>
+              --server=<<parameters.kubernetes-endpoint>>
             kubectl config set-context circleci.context \
               --cluster=circleci.cluster
             kubectl config set-credentials circleci \
