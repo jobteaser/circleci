@@ -1,5 +1,5 @@
 
-ORBS = $(wildcard **/orb.yml)
+ORBS = $(wildcard orbs/**/orb.yml)
 
 all: validate
 
