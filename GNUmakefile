@@ -9,4 +9,7 @@ validate:
 publish-dev:
 	./utils/publish-dev $(ORBS)
 
+publish-stable:
+	./utils/publish-stable $(ORBS)
+
 .PHONY: all validate

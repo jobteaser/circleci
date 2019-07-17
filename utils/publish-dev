@@ -2,11 +2,12 @@
 
 set -eu
 
-branch=$(git rev-parse --abbrev-ref HEAD)
+git_branch=$(git rev-parse --abbrev-ref HEAD)
+version="dev:$git_branch"
 
 for orb; do
     orb_name=$(dirname $orb)
-    orb_ref=jobteaser/$orb_name@dev:$branch
+    orb_ref=jobteaser/$orb_name@$version
 
-    circleci orb publish $orb $orb_ref
+    echo circleci orb publish $orb $orb_ref
 done
