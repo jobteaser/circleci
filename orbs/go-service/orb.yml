@@ -47,6 +47,10 @@ jobs:
         description: "The executor to use for the job."
         type: "executor"
         default: "ci"
+      persist-to-workspace:
+        description: "Whether to persist the checkout directory to the workspace or not."
+        type: "boolean"
+        default: false
       workspace:
         description: "The name of the workspace containing the project."
         type: "string"
@@ -67,6 +71,12 @@ jobs:
           command: |
             make test
       - save_go_pkg_cache
+      - when:
+          condition: <<parameters.persist-to-workspace>>
+          steps:
+            - persist_to_workspace:
+                root: "<<parameters.workspace>>"
+                paths: ["."]
 
   build:
     parameters:
