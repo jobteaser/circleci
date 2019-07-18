@@ -12,7 +12,7 @@ fi
 version=${tag#v}
 
 for orb; do
-    orb_name=$(dirname $orb)
+    orb_name=$(dirname ${orb#orbs/})
     orb_ref=jobteaser/$orb_name@$version
 
     echo circleci orb publish $orb $orb_ref

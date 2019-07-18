@@ -6,7 +6,7 @@ git_branch=$(git rev-parse --abbrev-ref HEAD)
 version="dev:$git_branch"
 
 for orb; do
-    orb_name=$(dirname $orb)
+    orb_name=$(dirname ${orb#orbs/})
     orb_ref=jobteaser/$orb_name@$version
 
     echo circleci orb publish $orb $orb_ref
