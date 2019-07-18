@@ -9,5 +9,5 @@ for orb; do
     orb_name=$(dirname ${orb#orbs/})
     orb_ref=jobteaser/$orb_name@$version
 
-    echo circleci orb publish $orb $orb_ref
+    circleci orb publish $orb $orb_ref
 done
