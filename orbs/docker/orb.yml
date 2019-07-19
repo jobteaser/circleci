@@ -4,17 +4,64 @@ description: |
   Use Docker in your workflows.
 
 executors:
-  build_docker_image:
+  default:
     docker:
       - image: "circleci/buildpack-deps:latest"
+
+commands:
+  setup:
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+  login:
+    steps:
+      - run:
+          name: "Login on the remote registry."
+          command: |
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_LOGIN" --password-stdin
+
+  build_image:
+    parameters:
+      dockerfile_path:
+        description: "The path of the dockerfile to build."
+        type: string
+        default: "Dockerfile"
+      image_name:
+        description: "The name of the image."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      image_tag:
+        description: "The tag of the image."
+        type: string
+        default: "git-$CIRCLE_SHA1"
+    steps:
+      - run:
+          name: "Build the image."
+          command: |
+            docker build -t <<parameters.image_name>>:<<parameters.image_tag>> \
+                         -f <<parameters.dockerfile_path>> \
+                         .
+
+  push_image:
+    parameters:
+      image_name:
+        description: "The name of the image."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      image_tag:
+        description: "The tag of the image."
+        type: string
+        default: "git-$CIRCLE_SHA1"
+    steps:
+      - run:
+          name: "Push the image to the remote registry."
+          command: |
+            docker push <<parameters.image_name>>:<<parameters.image_tag>>
 
 jobs:
   build_image:
     parameters:
-      workspace:
-        description: "The name of the workspace containing the project."
-        type: string
-        default: "~/workspace"
       dockerfile_path:
         description: "The path of the dockerfile to build."
         type: string
@@ -27,26 +74,14 @@ jobs:
         description: "The tag of the Docker image."
         type: string
         default: "git-$CIRCLE_SHA1"
-    executor: "build_docker_image"
-    environment:
-      DOCKER_BUILDKIT: "0"
-    working_directory: "<<parameters.workspace>>"
+    executor: "default"
     steps:
-      - attach_workspace:
-          at: "<<parameters.workspace>>"
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          name: "Login on dockerhub"
-          command: |
-            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_LOGIN" --password-stdin
-      - run:
-          name: "Build the Docker image"
-          command: |
-            docker build -t <<parameters.image_name>>:<<parameters.image_tag>> \
-                         -f <<parameters.dockerfile_path>> \
-                         .
-      - run:
-          name: "Push the Docker image"
-          command: |
-            docker push <<parameters.image_name>>:<<parameters.image_tag>>
+      - setup
+      - login
+      - build_image:
+          dockerfile_path: "<<parameters.dockerfile_path>>"
+          image_name: "<<parameters.image_name>>"
+          image_tag: "<<parameters.image_tag>>"
+      - push_image:
+          image_name: "<<parameters.image_name>>"
+          image_tag: "<<parameters.image_tag>>"
