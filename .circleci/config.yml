@@ -27,11 +27,12 @@ jobs:
             make publish-dev
       - run:
           name: "Publish stable orbs"
-          command: |
-            make publish-stable
           filters:
             tags:
-              only: /^v.*/
+              only: "/^v.*/"
+          command: |
+            make publish-stable
+
 workflows:
   main:
     jobs:
