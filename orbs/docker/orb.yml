@@ -15,15 +15,15 @@ jobs:
         description: "The name of the workspace containing the project."
         type: string
         default: "~/workspace"
-      dockerfile-path:
+      dockerfile_path:
         description: "The path of the dockerfile to build."
         type: string
         default: "Dockerfile"
-      image-name:
+      image_name:
         description: "The name of the Docker image."
         type: string
         default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
-      image-tag:
+      image_tag:
         description: "The tag of the Docker image."
         type: string
         default: "git-$CIRCLE_SHA1"
@@ -43,10 +43,10 @@ jobs:
       - run:
           name: "Build the Docker image"
           command: |
-            docker build -t <<parameters.image-name>>:<<parameters.image-tag>> \
-                         -f <<parameters.dockerfile-path>>                     \
+            docker build -t <<parameters.image_name>>:<<parameters.image_tag>> \
+                         -f <<parameters.dockerfile_path>> \
                          .
       - run:
           name: "Push the Docker image"
           command: |
-            docker push <<parameters.image-name>>:<<parameters.image-tag>>
+            docker push <<parameters.image_name>>:<<parameters.image_tag>>

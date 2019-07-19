@@ -14,43 +14,43 @@ executors:
 jobs:
   deploy:
     parameters:
-      docker-image:
+      docker_image:
         description: "The docker image to deploy."
         type: string
         default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
-      docker-tag:
+      docker_tag:
         description: "The tag of the docker image to deploy."
         type: string
         default: "git-$CIRCLE_SHA1"
-      kubernetes-namespace:
+      kubernetes_namespace:
         description: "The Kubernetes namespace."
         type: string
         default: "$CIRCLE_PROJECT_REPONAME"
-      kubernetes-endpoint:
+      kubernetes_endpoint:
         description: "The URL of the Kubernetes API endpoint."
         type: string
         default: "$K8S_ENDPOINT"
-      kubernetes-ca-cert:
+      kubernetes_ca_cert:
         description: "The CA certificate of the Kubernetes API server."
         type: string
         default: "$K8S_CA_CERT_PREPROD"
-      kubernetes-deploy-timeout:
+      kubernetes_deploy_timeout:
         description: "The amount of time to wait for the Kubernetes deployment to be ready."
         type: string
         default: "5m"
-      kubernetes-user-token:
+      kubernetes_user_token:
         description: "The Kubernetes user token."
         type: string
         default: "$K8S_USER_TOKEN_PREPROD"
-      helm-chart-path:
+      helm_chart_path:
         description: "The path of the Helm chart."
         type: string
         default: "./k8s/$CIRCLE_PROJECT_REPONAME"
-      helm-release-name:
+      helm_release_name:
         description: "The Helm release name."
         type: string
         default: "$CIRCLE_PROJECT_REPONAME-$CIRCLE_BRANCH"
-      helm-value-file-path:
+      helm_value_file_path:
         description: "The path of the extra value file to apply."
         type: string
         default: "./k8s/$CIRCLE_PROJECT_REPONAME/$HELM_VALUE_FILE_NAME"
@@ -60,30 +60,30 @@ jobs:
       - run:
           name: "Configure the kubernetes client"
           command: |
-            echo "<<parameters.kubernetes-ca-cert>>" | base64 -d >/tmp/k8s-ca-cert.pem
+            echo "<<parameters.kubernetes_ca_cert>>" | base64 -d >/tmp/k8s-ca-cert.pem
             kubectl config set-cluster circleci.cluster \
               --certificate-authority=/tmp/k8s-ca-cert.pem \
-              --server=<<parameters.kubernetes-endpoint>>
+              --server=<<parameters.kubernetes_endpoint>>
             kubectl config set-context circleci.context \
               --cluster=circleci.cluster
             kubectl config set-credentials circleci \
-              --token=<<parameters.kubernetes-user-token>>
+              --token=<<parameters.kubernetes_user_token>>
             kubectl config set-context circleci.context \
               --user=circleci \
-              --namespace=<<parameters.kubernetes-namespace>>
+              --namespace=<<parameters.kubernetes_namespace>>
             kubectl config use-context circleci.context
       - run:
           name: "Install or upgrade the Helm release"
           command: |
-            helm upgrade <<parameters.helm-release-name>> \
-              --tiller-namespace=<<parameters.kubernetes-namespace>> \
-              --namespace=<<parameters.kubernetes-namespace>> \
+            helm upgrade <<parameters.helm_release_name>> \
+              --tiller-namespace=<<parameters.kubernetes_namespace>> \
+              --namespace=<<parameters.kubernetes_namespace>> \
               --install \
-              --set=image=<<parameters.docker-image>>:<<parameters.docker-tag>> \
-              -f <<parameters.helm-value-file-path>> \
-              <<parameters.helm-chart-path>>
+              --set=image=<<parameters.docker_image>>:<<parameters.docker_tag>> \
+              -f <<parameters.helm_value_file_path>> \
+              <<parameters.helm_chart_path>>
       - run:
           name: "Wait for the deployment to succeed"
           command: |
-            kubectl rollout status deploy/<<parameters.helm-release-name>> \
-              --timeout=<<parameters.kubernetes-deploy-timeout>>
+            kubectl rollout status deploy/<<parameters.helm_release_name>> \
+              --timeout=<<parameters.kubernetes_deploy_timeout>>
