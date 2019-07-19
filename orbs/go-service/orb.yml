@@ -3,6 +3,9 @@ version: 2.1
 description: |
   Standard jobs for services using the go-service Go module.
 
+orbs:
+  docker: "jobteaser/docker@dev:master"
+
 executors:
   ci:
     docker:
@@ -47,16 +50,7 @@ jobs:
         description: "The executor to use for the job."
         type: "executor"
         default: "ci"
-      persist_to_workspace:
-        description: "Whether to persist the checkout directory to the workspace or not."
-        type: "boolean"
-        default: false
-      workspace:
-        description: "The name of the workspace containing the project."
-        type: "string"
-        default: "~/workspace"
     executor: "<<parameters.executor>>"
-    working_directory: "<<parameters.workspace>>"
     steps:
       - configure_ssh
       - configure_git
@@ -71,12 +65,6 @@ jobs:
           command: |
             make test
       - save_go_pkg_cache
-      - when:
-          condition: <<parameters.persist_to_workspace>>
-          steps:
-            - persist_to_workspace:
-                root: "<<parameters.workspace>>"
-                paths: ["."]
 
   build:
     parameters:
@@ -84,12 +72,7 @@ jobs:
         description: "The executor to use for the job."
         type: "executor"
         default: "ci"
-      workspace:
-        description: "The name of the workspace containing the project."
-        type: string
-        default: "~/workspace"
     executor: "<<parameters.executor>>"
-    working_directory: "<<parameters.workspace>>"
     steps:
       - configure_ssh
       - configure_git
@@ -100,6 +83,18 @@ jobs:
           command: |
             make build
       - save_go_pkg_cache
-      - persist_to_workspace:
-          root: "<<parameters.workspace>>"
-          paths: ["."]
+      - docker/setup
+      - docker/login
+      - docker/build_image
+
+  release:
+    parameters:
+      executor:
+        description: "The executor to use for the job."
+        type: "executor"
+        default: "docker/default"
+    executor: "<<parameters.executor>>"
+    steps:
+      - docker/setup
+      - docker/login
+      - docker/push_image
