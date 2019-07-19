@@ -1,10 +1,7 @@
 version: 2.1
 
-jobs:
-  build_and_publish:
-    docker:
-      - image: "ubuntu:18.04"
-
+commands:
+  prepare:
     steps:
       - run:
           name: "Install dependencies"
@@ -16,29 +13,54 @@ jobs:
           command: |
             curl -fLSs https://circle.ci/cli | bash
             circleci update
+
+jobs:
+  validate:
+    docker:
+      - image: "ubuntu:18.04"
+    steps:
+      - prepare
       - checkout
       - run:
           name: "Validate orbs"
           command: |
             make validate
+
+  publish_dev:
+    docker:
+      - image: "ubuntu:18.04"
+    steps:
+      - prepare
+      - checkout
       - run:
           name: "Publish development orbs"
           command: |
             make publish-dev
+
+  publish_stable:
+    docker:
+      - image: "ubuntu:18.04"
+    steps:
+      - prepare
+      - checkout
       - run:
           name: "Publish stable orbs"
-          filters:
-            branches:
-              ignore: "/.*/"
-            tags:
-              only: "/^v.*/"
           command: |
             make publish-stable
 
 workflows:
   main:
     jobs:
-      - build_and_publish
+      - validate
+      - publish_dev:
+          requires: ["validate"]
+      - publish_stable:
+          requires: ["validate"]
+          filters:
+            branches:
+              ignore: "/.*/"
+            tags:
+              only: "/^v.*/"
 
   nightly:
     triggers:
@@ -49,4 +71,6 @@ workflows:
               only:
                 ["master"]
     jobs:
-      - build_and_publish
+      - validate
+      - publish_dev:
+          requires: ["validate"]
