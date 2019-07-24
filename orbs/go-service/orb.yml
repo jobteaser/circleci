@@ -83,6 +83,12 @@ jobs:
           command: |
             make build
       - save_go_pkg_cache
+      - store_artifacts:
+          path: "./bin"
+      - store_artifacts:
+          path: "./cfg"
+      - store_artifacts:
+          path: "./data"
       - docker/setup
       - docker/login
       - docker/build_image
