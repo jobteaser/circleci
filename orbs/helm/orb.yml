@@ -26,6 +26,10 @@ jobs:
         description: "The Kubernetes namespace."
         type: string
         default: "$CIRCLE_PROJECT_REPONAME"
+      kubernetes_deployment:
+        description: "The name of the Kubernetes deployment."
+        type: string
+        default: "$CIRCLE_PROJECT_REPONAME-$CIRCLE_BRANCH"
       kubernetes_endpoint:
         description: "The URL of the Kubernetes API endpoint."
         type: string
@@ -73,6 +77,13 @@ jobs:
               --namespace=<<parameters.kubernetes_namespace>>
             kubectl config use-context circleci.context
       - run:
+          name: "Initialize Helm"
+          command: |
+            cd <<parameters.helm_chart_path>>
+            helm init --client-only
+            helm repo add jobteaser https://jobteaser.github.io/charts
+            helm dep update
+      - run:
           name: "Install or upgrade the Helm release"
           command: |
             helm upgrade <<parameters.helm_release_name>> \
@@ -85,5 +96,5 @@ jobs:
       - run:
           name: "Wait for the deployment to succeed"
           command: |
-            kubectl rollout status deploy/<<parameters.helm_release_name>> \
+            kubectl rollout status deploy/<<parameters.kubernetes_deployment>> \
               --timeout=<<parameters.kubernetes_deploy_timeout>>
