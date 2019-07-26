@@ -64,14 +64,17 @@ commands:
           name: "Refresh the trivy vulnerability list"
           command: |
             trivy -q --refresh
-      - run:
-          name: "Check the image with trivy"
-          command: |
-            trivy -q --clear-cache -f json --exit-code 1 <<parameters.image_name>>:<<parameters.image_tag>>
       - save_cache:
           key: "$CIRCLE_PROJECT_REPONAME-trivy-v1"
           paths:
             - "/root/.cache/trivy"
+      - run:
+          name: "Check the image with trivy"
+          command: |
+            trivy -q --clear-cache -f json -o /tmp/trivy.json \
+              <<parameters.image_name>>:<<parameters.image_tag>>
+      - store_artifacts:
+          path: "/tmp/trivy.json"
 
   push_image:
     parameters:
