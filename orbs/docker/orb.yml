@@ -46,6 +46,33 @@ commands:
                          -f <<parameters.dockerfile_path>> \
                          .
 
+  check_image_trivy:
+    parameters:
+      image_name:
+        description: "The name of the image."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      image_tag:
+        description: "The tag of the image."
+        type: string
+        default: "git-$CIRCLE_SHA1"
+    steps:
+      - restore_cache:
+          keys:
+            - "$CIRCLE_PROJECT_REPONAME-trivy-v1"
+      - run:
+          name: "Refresh the trivy vulnerability list"
+          command: |
+            trivy -q --refresh
+      - run:
+          name: "Check the image with trivy"
+          command: |
+            trivy -q --clear-cache -f json --exit-code 1 <<parameters.image_name>>:<<parameters.image_tag>>
+      - save_cache:
+          key: "$CIRCLE_PROJECT_REPONAME-trivy-v1"
+          paths:
+            - "/root/.cache/trivy"
+
   push_image:
     parameters:
       image_name:
@@ -84,6 +111,9 @@ jobs:
       - login
       - build_image:
           dockerfile_path: "<<parameters.dockerfile_path>>"
+          image_name: "<<parameters.image_name>>"
+          image_tag: "<<parameters.image_tag>>"
+      - check_image_trivy:
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
       - push_image:
