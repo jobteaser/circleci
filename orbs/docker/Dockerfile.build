@@ -6,6 +6,7 @@ LABEL maintainer="opensource@jobteaser.com"
 ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get update -y && \
+    apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
       wget ca-certificates docker.io apt-transport-https gnupg git && \
     rm -rf /var/lib/apt/lists/* && \
