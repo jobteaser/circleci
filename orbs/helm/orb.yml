@@ -6,7 +6,7 @@ description: |
 executors:
   deploy:
     docker:
-      - image: "jobteaser/circleci-deploy:latest"
+      - image: "jobteaser/circleci-helm-deploy:latest"
         auth:
           username: "$DOCKER_LOGIN"
           password: "$DOCKER_PASSWORD"
