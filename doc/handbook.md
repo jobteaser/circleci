@@ -101,3 +101,9 @@ or patch versions. As a rule of thumb:
 If you need to experiment with orbs, just create a branch and publish
 development versions based on this branch. In your project, you can then
 depend on `dev:<branch>`.
+
+### Executors
+Executors defined in orbs are based on Dockerfiles stored in the orb
+directory, using the name of the executor as file extension. For example, the
+Dockerfile for the `deploy` executor of the `helm` orb is available at
+`orbs/helm/Dockerfile.deploy`.
