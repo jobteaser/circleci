@@ -4,9 +4,12 @@ description: |
   Use Docker in your workflows.
 
 executors:
-  default:
+  build:
     docker:
-      - image: "circleci/buildpack-deps:latest"
+      - image: "jobteaser/circleci-docker-build:latest"
+        auth:
+          username: "$DOCKER_LOGIN"
+          password: "$DOCKER_PASSWORD"
 
 commands:
   setup:
@@ -74,7 +77,7 @@ jobs:
         description: "The tag of the Docker image."
         type: string
         default: "git-$CIRCLE_SHA1"
-    executor: "default"
+    executor: "build"
     steps:
       - checkout
       - setup
