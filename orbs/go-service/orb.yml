@@ -53,7 +53,7 @@ commands:
       - run:
           name: "Generate the build info file"
           command: |
-            echo '{"gitHash": "$CIRCLE_SHA1"}' >"<<parameters.file_path>>"
+            echo "{\"gitHash\": \"$CIRCLE_SHA1\"}" >"<<parameters.file_path>>"
 
 jobs:
   test:
