@@ -43,9 +43,9 @@ commands:
           name: "Build the image."
           command: |
             docker build -t <<parameters.image_name>>:<<parameters.image_tag>> \
-                         -l org.opencontainers.image.vendor=JobTeaser
-                         -l org.opencontainers.image.url=https://github.com/jobteaser/$CIRCLE_PROJECT_REPONAME
-                         -l org.opencontainers.image.revision=$CIRCLE_SHA1
+                         --label org.opencontainers.image.vendor=JobTeaser
+                         --label org.opencontainers.image.url=https://github.com/jobteaser/$CIRCLE_PROJECT_REPONAME
+                         --label org.opencontainers.image.revision=$CIRCLE_SHA1
                          -f <<parameters.dockerfile_path>> \
                          .
 
