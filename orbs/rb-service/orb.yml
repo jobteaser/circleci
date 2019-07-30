@@ -4,6 +4,7 @@ description: |
   Standard jobs for services using the rb-service Ruby module.
 
 orbs:
+  service: "jobteaser/service@dev:master"
   docker: "jobteaser/docker@dev:master"
 
 executors:
@@ -15,14 +16,6 @@ executors:
           password: "$DOCKER_PASSWORD"
 
 commands:
-  configure_ssh:
-    steps:
-      - run:
-          name: "Configure SSH"
-          command: |
-            mkdir -p ~/.ssh
-            ssh-keyscan github.com > ~/.ssh/known_hosts
-
   save_ruby_bundle_cache:
     steps:
       - save_cache:
@@ -46,7 +39,7 @@ jobs:
         default: "ci"
     executor: "<<parameters.executor>>"
     steps:
-      - configure_ssh
+      - service/configure_ssh
       - checkout
       - restore_ruby_bundle_cache
       - run:
@@ -70,7 +63,7 @@ jobs:
         default: "ci"
     executor: "<<parameters.executor>>"
     steps:
-      - configure_ssh
+      - service/configure_ssh
       - checkout
       - restore_ruby_bundle_cache
       - run:
