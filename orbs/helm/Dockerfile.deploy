@@ -11,7 +11,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update -y && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
-      wget ca-certificates && \
+      wget ca-certificates git openssh-client && \
     rm -rf /var/lib/apt/lists/* && \
     ( \
       cd /tmp && \
