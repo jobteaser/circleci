@@ -8,7 +8,15 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get update -y && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
-      wget ca-certificates docker.io apt-transport-https gnupg git && \
+      # base
+      wget ca-certificates \
+      # checkout
+      git openssh-client \
+      # build
+      docker.io \
+      # trivy (note that it also uses git at runtime)
+      apt-transport-https gnupg \
+    && \
     rm -rf /var/lib/apt/lists/* && \
     ( \
       wget -qO - https://knqyf263.github.io/trivy-repo/deb/public.key | apt-key add - && \
