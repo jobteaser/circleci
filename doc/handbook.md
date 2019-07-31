@@ -45,6 +45,13 @@ A new project must perform the following steps to use the CI/CD pipeline:
   User token environment variables use decoded forms (i.e. use `base64 -d` on
   the content of the secret entry). CA certificates environment variables must
   be base64-encoded.
+
+  Note: you can use the following commands to extract the token and certificate
+  (you'll need jq installed first).
+  ```sh
+  kubectl get secret <secret-name> -o json | jq -r '.data.token' | base64 --decode
+  kubectl get secret <secret-name> -o json | jq -r '.data."ca.crt"'
+  ```
 - Create in both preprod and prod a kubernetes secret for DockerHub
   credentials:
   ```sh
