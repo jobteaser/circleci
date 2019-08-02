@@ -11,9 +11,33 @@ executors:
           username: "$DOCKER_LOGIN"
           password: "$DOCKER_PASSWORD"
 
+commands:
+  tag_deployment:
+    parameters:
+      environment:
+        description: "The runtime environment."
+        type: string
+        default: "staging"
+    steps:
+      - run:
+          name: "Configure Git"
+          command: |
+            git config --global user.email "dev@jobteaser.com"
+            git config --global user.name "Jobtomate CircleCI"
+      - run:
+          name: "Tag the deployment"
+          command: |
+            tag="deployment-<<parameters.environment>>-$(date -u +'%Y%m%dT%H%M%SZ')"
+            git tag $tag
+            git push origin $tag
+
 jobs:
   deploy:
     parameters:
+      environment:
+        description: "The runtime environment."
+        type: string
+        default: "staging"
       docker_image:
         description: "The docker image to deploy."
         type: string
@@ -98,3 +122,5 @@ jobs:
           command: |
             kubectl rollout status deploy/<<parameters.kubernetes_deployment>> \
               --timeout=<<parameters.kubernetes_deploy_timeout>>
+      - tag_deployment:
+          environment: "<<parameters.environment>>"
