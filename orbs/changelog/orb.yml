@@ -1,0 +1,47 @@
+version: 2.1
+
+description: |
+  Create and announce changelogs for Git repositories.
+
+executors:
+  default:
+    docker:
+      - image: "ubuntu:18.04"
+
+jobs:
+  publish:
+    parameters:
+      environment:
+        description: "The runtime environment."
+        type: string
+        default: "staging"
+      slack_webhook_uri:
+        description: "The Slack webhook URI."
+        type: string
+        default: "$SLACK_WEBHOOK_URI"
+      icon_emoji:
+        description: "The emoji to use as icon for messages."
+        default: ":poop:"
+    executor: "default"
+    steps:
+      - run:
+          name: "Install dependencies"
+          command: |
+            apt-get update -y
+            apt-get install -y git openssh-client ca-certificates curl jq
+      - checkout
+      - run:
+          name: "Publish the changelog"
+          command: |
+            # Note that we need to tag just before the last one since we just
+            # tagged the new version.
+            last_release_tag=$(git tag | grep '^deployment-<<parameters.environment>>-' | head -n2 | tail -n1)
+            [ -z "$last_release_tag" ] && exit 1
+            changelog=$(git log --format='%h  %cI  %<(32)%an  %s' $last_release_tag..HEAD)
+            message="Deployment finished for project *$CIRCLE_PROJECT_REPONAME* in *<<parameters.environment>>*: \`\`\`$changelog\`\`\`"
+            message=$(jq -n --arg msg "$message" '$msg')
+            icon_emoji=$(jq -n --arg s "<<parameters.icon_emoji>>" '$s')
+            curl -X POST \
+                 -H 'Content-Type: application/json' \
+                 --data "{\"username\": \"CircleCI\", \"text\": $message, \"icon_emoji\": $icon_emoji}" \
+                 <<parameters.slack_webhook_uri>>
