@@ -21,6 +21,7 @@ jobs:
         default: "$SLACK_WEBHOOK_URI"
       icon_emoji:
         description: "The emoji to use as icon for messages."
+        type: string
         default: ":poop:"
     executor: "default"
     steps:
