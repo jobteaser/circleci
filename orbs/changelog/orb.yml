@@ -39,7 +39,7 @@ jobs:
             last_release_tag=$(git tag | grep '^deployment-<<parameters.environment>>-' | tail -n2 | head -n1)
             [ -z "$last_release_tag" ] && exit 1
             changelog=$(git log --format='%h  %cI  %<(32)%an  %s' $last_release_tag..HEAD)
-            message="Deployment finished for project *$CIRCLE_PROJECT_REPONAME* in *<<parameters.environment>>*: \`\`\`$changelog\`\`\`"
+            message="Deployment finished for *$CIRCLE_PROJECT_REPONAME* in *<<parameters.environment>>*: \`\`\`$changelog\`\`\`"
             message=$(jq -n --arg msg "$message" '$msg')
             icon_emoji=$(jq -n --arg s "<<parameters.icon_emoji>>" '$s')
             curl -X POST \
