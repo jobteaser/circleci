@@ -36,7 +36,7 @@ jobs:
           command: |
             # Note that we need to tag just before the last one since we just
             # tagged the new version.
-            last_release_tag=$(git tag | grep '^deployment-<<parameters.environment>>-' | head -n2 | tail -n1)
+            last_release_tag=$(git tag | grep '^deployment-<<parameters.environment>>-' | tail -n2 | head -n1)
             [ -z "$last_release_tag" ] && exit 1
             changelog=$(git log --format='%h  %cI  %<(32)%an  %s' $last_release_tag..HEAD)
             message="Deployment finished for project *$CIRCLE_PROJECT_REPONAME* in *<<parameters.environment>>*: \`\`\`$changelog\`\`\`"
