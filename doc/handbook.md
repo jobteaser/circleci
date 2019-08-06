@@ -12,7 +12,7 @@ The CI/CD pipeline is made of the following steps:
 - CircleCI run tests and build the project.
 - CircleCI creates a Docker image containing the output of the build and push
   it to DockerHub.
-- CircleCI uses Helm to upgrade the preprod Kubernetes cluster. Kubernetes
+- CircleCI uses Helm to upgrade the staging Kubernetes cluster. Kubernetes
   pulls the image from DockerHub.
 - The same step if repeated for the prod Kubernetes cluster.
 
@@ -33,12 +33,12 @@ A new project must perform the following steps to use the CI/CD pipeline:
   only necessary if the project must access other GitHub repositories, for
   example if it uses private repositories as dependencies.
 - Add the following environment variables to the CircleCI project:
-  - `K8S_CA_CERT_PREPROD`
+  - `K8S_CA_CERT_STAGING`
   - `K8S_CA_CERT_PROD`
-  - `K8S_USER_TOKEN_PREPROD`
+  - `K8S_USER_TOKEN_STAGING`
   - `K8S_USER_TOKEN_PROD`
 
-  CircleCI will need a user token and a CA certificate to connect to preprod
+  CircleCI will need a user token and a CA certificate to connect to staging
   and prod Kubernetes clusters. These data are stored in a Kubernetes secret
   of each namespace named `<namespace>-ci-token-token-<id>`. You can use
   `kubectl get secret <name> -o yaml` to obtain the certificate and the token.
@@ -52,7 +52,7 @@ A new project must perform the following steps to use the CI/CD pipeline:
   kubectl get secret <secret-name> -o json | jq -r '.data.token' | base64 --decode
   kubectl get secret <secret-name> -o json | jq -r '.data."ca.crt"'
   ```
-- Create in both preprod and prod a kubernetes secret for DockerHub
+- Create in both staging and prod a kubernetes secret for DockerHub
   credentials:
   ```sh
   kubectl create secret docker-registry regcred           \

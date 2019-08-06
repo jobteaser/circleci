@@ -61,7 +61,7 @@ jobs:
       kubernetes_ca_cert:
         description: "The CA certificate of the Kubernetes API server."
         type: string
-        default: "$K8S_CA_CERT_PREPROD"
+        default: "$K8S_CA_CERT_STAGING"
       kubernetes_deploy_timeout:
         description: "The amount of time to wait for the Kubernetes deployment to be ready."
         type: string
@@ -69,7 +69,7 @@ jobs:
       kubernetes_user_token:
         description: "The Kubernetes user token."
         type: string
-        default: "$K8S_USER_TOKEN_PREPROD"
+        default: "$K8S_USER_TOKEN_STAGING"
       helm_chart_path:
         description: "The path of the Helm chart."
         type: string
