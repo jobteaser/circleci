@@ -18,6 +18,13 @@ The CI/CD pipeline is made of the following steps:
 
 ### Project bootstrap
 
+Bootstraping projects require the following permissions:
+
+- DockerHub steps require a DockerHub account which is part of the Jobteaser
+  organization. It must be in the `owners` group. There should be at least one
+  member of each squad with the required permissions.
+- Read Kubernetes secrets require access to the namespace.
+
 A new project must perform the following steps to use the CI/CD pipeline:
 
 - Create a new repository on DockerHub associated with the Github repository
