@@ -12,6 +12,24 @@ executors:
           password: "$DOCKER_PASSWORD"
 
 commands:
+  check_helm_configuration:
+    description: "Check the Helm configuration using the Helm linter."
+    parameters:
+      helm_chart_path:
+        description: "The path of the Helm chart."
+        type: string
+        default: "./k8s/$CIRCLE_PROJECT_REPONAME"
+      helm_value_file_path:
+        description: "The path of the extra value file to apply."
+        type: string
+        default: "./k8s/$CIRCLE_PROJECT_REPONAME/$HELM_VALUE_FILE_NAME"
+    steps:
+      - run:
+          name: "Check the Helm configuration"
+          command: |
+            helm lint -f <<parameters.helm_value_file_path>> \
+              <<parameters.helm_chart_path>>
+
   tag_deployment:
     parameters:
       environment:
@@ -82,6 +100,10 @@ jobs:
         description: "The path of the extra value file to apply."
         type: string
         default: "./k8s/$CIRCLE_PROJECT_REPONAME/$HELM_VALUE_FILE_NAME"
+      check_helm_configuration:
+        description: "Whether to check the Helm configuration or not."
+        type: boolean
+        default: true
       tag_deployment:
         description: "Whether to create a deployment Git tag or not."
         type: boolean
@@ -111,6 +133,12 @@ jobs:
             helm init --client-only
             helm repo add jobteaser https://jobteaser.github.io/charts
             helm dep update
+      - when:
+          condition: <<parameters.check_helm_configuration>>
+          steps:
+            - check_helm_configuration:
+                helm_chart_path: "<<parameters.helm_chart_path>>"
+                helm_value_file_path: "<<parameters.helm_value_file_path>>"
       - run:
           name: "Install or upgrade the Helm release"
           command: |
