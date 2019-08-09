@@ -30,16 +30,16 @@ jobs:
           command: |
             apt-get update -y
             apt-get install -y git openssh-client ca-certificates curl jq
+            curl -sL https://deb.nodesource.com/setup_10.x | bash -
+            apt-get install -y nodejs
       - checkout
       - run:
           name: "Publish the changelog"
           command: |
             # Note that we need to tag just before the last one since we just
             # tagged the new version.
-            last_release_tag=$(git tag | grep '^deployment-<<parameters.environment>>-' | tail -n2 | head -n1)
-            [ -z "$last_release_tag" ] && exit 1
-            changelog=$(git log --date='format:%Y-%m-%d' --format='%h  %cd  %<(24)%an  %s' $last_release_tag..HEAD)
-            message="Deployment finished for *$CIRCLE_PROJECT_REPONAME* in *<<parameters.environment>>*: \`\`\`$changelog\`\`\`"
+            changelog=$(npx generate_slack_release_notes https://github.com/jobteaser/$CIRCLE_PROJECT_REPONAME deployment-<<parameters.environment>>-)
+            message="Deployment finished for *$CIRCLE_PROJECT_REPONAME* in *<<parameters.environment>>*:"$'\n'
             message=$(jq -n --arg msg "$message" '$msg')
             icon_emoji=$(jq -n --arg s "<<parameters.icon_emoji>>" '$s')
             curl -X POST \
