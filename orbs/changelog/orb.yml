@@ -30,19 +30,17 @@ jobs:
           command: |
             apt-get update -y
             apt-get install -y git openssh-client ca-certificates curl jq
+            curl -sL https://deb.nodesource.com/setup_10.x | bash -
+            apt-get install -y nodejs
       - checkout
       - run:
           name: "Publish the changelog"
           command: |
             # Note that we need to tag just before the last one since we just
             # tagged the new version.
-            last_release_tag=$(git tag | grep '^deployment-<<parameters.environment>>-' | tail -n2 | head -n1)
-            [ -z "$last_release_tag" ] && exit 1
-            changelog=$(git log --date='format:%Y-%m-%d' --format='%h  %cd  %<(24)%an  %s' $last_release_tag..HEAD)
-            message="Deployment finished for *$CIRCLE_PROJECT_REPONAME* in *<<parameters.environment>>*: \`\`\`$changelog\`\`\`"
-            message=$(jq -n --arg msg "$message" '$msg')
-            icon_emoji=$(jq -n --arg s "<<parameters.icon_emoji>>" '$s')
-            curl -X POST \
-                 -H 'Content-Type: application/json' \
-                 --data "{\"username\": \"CircleCI\", \"text\": $message, \"icon_emoji\": $icon_emoji}" \
-                 <<parameters.slack_webhook_uri>>
+            npx @jobteaser/slack-release-notes \
+                --repo-url "https://github.com/jobteaser/$CIRCLE_PROJECT_REPONAME" \
+                --tag-prefix "deployment-<<parameters.environment>>-" \
+                --project-name "$CIRCLE_PROJECT_REPONAME" \
+                --webhook-url "<<parameters.slack_webhook_uri>>" \
+                --icon-emoji "$icon_emoji"
