@@ -30,6 +30,10 @@ commands:
         description: "The path of the dockerfile to build."
         type: string
         default: "Dockerfile"
+      dockerfile_directory:
+        description: "The directory to use to build image."
+        type: string
+        default: "."
       image_name:
         description: "The name of the image."
         type: string
@@ -47,7 +51,7 @@ commands:
                          --label org.opencontainers.image.url=https://github.com/jobteaser/$CIRCLE_PROJECT_REPONAME \
                          --label org.opencontainers.image.revision=$CIRCLE_SHA1 \
                          -f <<parameters.dockerfile_path>> \
-                         .
+                         <<parameters.dockerfile_directory>>
 
   check_image_trivy:
     parameters:
