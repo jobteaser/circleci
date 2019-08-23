@@ -12,6 +12,42 @@ executors:
           password: "$DOCKER_PASSWORD"
 
 commands:
+  configure_kubernetes_client:
+    description: "Configure the kubernetes client."
+    parameters:
+      kubernetes_namespace:
+        description: "The Kubernetes namespace."
+        type: string
+        default: "$CIRCLE_PROJECT_REPONAME"
+      kubernetes_endpoint:
+        description: "The URL of the Kubernetes API endpoint."
+        type: string
+        default: "$K8S_ENDPOINT"
+      kubernetes_ca_cert:
+        description: "The CA certificate of the Kubernetes API server."
+        type: string
+        default: "$K8S_CA_CERT_STAGING"
+      kubernetes_user_token:
+        description: "The Kubernetes user token."
+        type: string
+        default: "$K8S_USER_TOKEN_STAGING"
+    steps:
+      - run:
+          name: "Configure the kubernetes client"
+          command: |
+            echo "<<parameters.kubernetes_ca_cert>>" | base64 -d >/tmp/k8s-ca-cert.pem
+            kubectl config set-cluster circleci.cluster \
+              --certificate-authority=/tmp/k8s-ca-cert.pem \
+              --server=<<parameters.kubernetes_endpoint>>
+            kubectl config set-context circleci.context \
+              --cluster=circleci.cluster
+            kubectl config set-credentials circleci \
+              --token=<<parameters.kubernetes_user_token>>
+            kubectl config set-context circleci.context \
+              --user=circleci \
+              --namespace=<<parameters.kubernetes_namespace>>
+            kubectl config use-context circleci.context
+
   check_helm_chart:
     description: "Check the Helm chart using the Helm linter."
     parameters:
@@ -144,21 +180,11 @@ jobs:
     executor: "deploy"
     steps:
       - checkout
-      - run:
-          name: "Configure the kubernetes client"
-          command: |
-            echo "<<parameters.kubernetes_ca_cert>>" | base64 -d >/tmp/k8s-ca-cert.pem
-            kubectl config set-cluster circleci.cluster \
-              --certificate-authority=/tmp/k8s-ca-cert.pem \
-              --server=<<parameters.kubernetes_endpoint>>
-            kubectl config set-context circleci.context \
-              --cluster=circleci.cluster
-            kubectl config set-credentials circleci \
-              --token=<<parameters.kubernetes_user_token>>
-            kubectl config set-context circleci.context \
-              --user=circleci \
-              --namespace=<<parameters.kubernetes_namespace>>
-            kubectl config use-context circleci.context
+      - configure_kubernetes_client:
+          kubernetes_ca_cert: "<<parameters.kubernetes_ca_cert>>"
+          kubernetes_endpoint: "<<parameters.kubernetes_endpoint>>"
+          kubernetes_user_token: "<<parameters.kubernetes_user_token>>"
+          kubernetes_namespace:  "<<parameters.kubernetes_namespace>>"
       - run:
           name: "Initialize Helm"
           command: |

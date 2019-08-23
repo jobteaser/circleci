@@ -19,8 +19,8 @@ RUN apt-get update -y && \
     && \
     rm -rf /var/lib/apt/lists/* && \
     ( \
-      wget -qO - https://knqyf263.github.io/trivy-repo/deb/public.key | apt-key add - && \
-      echo "deb https://knqyf263.github.io/trivy-repo/deb bionic main" >>/etc/apt/sources.list.d/trivy.list && \
+      wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add - && \
+      echo "deb https://aquasecurity.github.io/trivy-repo/deb bionic main" >>/etc/apt/sources.list.d/trivy.list && \
       apt-get update -y && \
       apt-get install -y trivy && \
       rm -rf /var/lib/apt/lists/* \
