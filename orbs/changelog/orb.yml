@@ -38,6 +38,7 @@ jobs:
           command: |
             # Note that we need to tag just before the last one since we just
             # tagged the new version.
+            icon_emoji=$(jq -n --arg s "<<parameters.icon_emoji>>" '$s')
             npx @jobteaser/slack-release-notes \
                 --repo-url "https://github.com/jobteaser/$CIRCLE_PROJECT_REPONAME" \
                 --tag-prefix "deployment-<<parameters.environment>>-" \
