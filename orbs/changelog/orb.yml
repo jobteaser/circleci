@@ -43,4 +43,4 @@ jobs:
                 --tag-prefix "deployment-<<parameters.environment>>-" \
                 --project-name "$CIRCLE_PROJECT_REPONAME" \
                 --webhook-url "<<parameters.slack_webhook_uri>>" \
-                --icon-emoji "$icon_emoji"
+                --icon-emoji "<<parameters.icon_emoji>>"
