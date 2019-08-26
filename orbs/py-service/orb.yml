@@ -34,18 +34,15 @@ jobs:
           name: "Run tests"
           command: |
             mkdir service
-            mv <<parameters.component>>/* service
-            pip3 install -r service/requirements.txt
-            SRV_CFG_PATH="/root/project/service/tests/config.yaml" python3 -m unittest discover --start-directory service/tests
+            mv <<parameters.component>> service
+            pip3 install -r service/<<parameters.component>>/requirements.txt
+            SRV_CFG_PATH="/root/project/service/<<parameters.component>>/tests/config.yaml" python3 -m unittest discover --start-directory service/<<parameters.component>>/tests
   build:
     parameters:
       executor:
         description: "The executor to use for the job."
         type: "executor"
         default: "ci"
-      component:
-        description: "The name of the component to build"
-        type: string
       dockerfile_path:
         description: "The path of the dockerfile to build."
         type: string
@@ -64,7 +61,7 @@ jobs:
       - docker/login
       - run:
           name: "Download packages"
-          command: pip3 download --dest <<parameters.component>>/packages -r <<parameters.component>>/requirements.txt
+          command: pip3 download --dest packages -r requirements.txt
       - docker/build_image:
           image_name: <<parameters.image_name>>
           dockerfile_path: <<parameters.dockerfile_path>>
