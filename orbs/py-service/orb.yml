@@ -68,6 +68,11 @@ jobs:
           dockerfile_directory: <<parameters.dockerfile_directory>>
       - docker/push_image:
           image_name: <<parameters.image_name>>
+      - docker/build_image:
+          image_name: <<parameters.image_name>>
+          dockerfile_path: <<parameters.dockerfile_path>>
+          dockerfile_directory: <<parameters.dockerfile_directory>>
+          image_tag: "${CIRCLE_BRANCH}"
       - docker/push_image:
           image_name: <<parameters.image_name>>
           image_tag: "${CIRCLE_BRANCH}"
