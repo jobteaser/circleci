@@ -206,13 +206,12 @@ jobs:
       - run:
           name: "Install or upgrade the Helm release"
           command: |
-            helm upgrade <<parameters.helm_release_name>> \
+            helm upgrade \
               --tiller-namespace=<<parameters.kubernetes_namespace>> \
               --namespace=<<parameters.kubernetes_namespace>> \
-              --install \
-              --set=image=<<parameters.docker_image>>:<<parameters.docker_tag>> \
               -f <<parameters.helm_value_file_path>> \
-              <<parameters.helm_chart_path>>
+              --set=image=<<parameters.docker_image>>:<<parameters.docker_tag>> \
+              --install <<parameters.helm_release_name>> <<parameters.helm_chart_path>>
       - run:
           name: "Wait for the deployment to succeed"
           command: |
