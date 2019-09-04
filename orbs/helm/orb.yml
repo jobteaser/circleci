@@ -149,10 +149,6 @@ jobs:
         description: "The CA certificate of the Kubernetes API server."
         type: string
         default: "$K8S_CA_CERT_STAGING"
-      kubernetes_deploy_timeout:
-        description: "The amount of time to wait for the Kubernetes deployment to be ready."
-        type: string
-        default: "5m"
       kubernetes_user_token:
         description: "The Kubernetes user token."
         type: string
@@ -165,6 +161,10 @@ jobs:
         description: "The Helm release name."
         type: string
         default: "$CIRCLE_PROJECT_REPONAME-$CIRCLE_BRANCH"
+      helm_upgrade_timeout:
+        description: "The amount of time to wait for the Helm release upgrade to finish in seconds."
+        type: integer
+        default: 300
       helm_value_file_path:
         description: "The path of the extra value file to apply."
         type: string
@@ -211,12 +211,8 @@ jobs:
               --namespace=<<parameters.kubernetes_namespace>> \
               -f <<parameters.helm_value_file_path>> \
               --set=image=<<parameters.docker_image>>:<<parameters.docker_tag>> \
+              --wait --timeout=<<parameters.helm_upgrade_timeout>> \
               --install <<parameters.helm_release_name>> <<parameters.helm_chart_path>>
-      - run:
-          name: "Wait for the deployment to succeed"
-          command: |
-            kubectl rollout status deploy/<<parameters.kubernetes_deployment>> \
-              --timeout=<<parameters.kubernetes_deploy_timeout>>
       - when:
           condition: <<parameters.tag_deployment>>
           steps:
