@@ -116,7 +116,7 @@ commands:
       - run:
           name: "Tag the deployment"
           command: |
-            tag="deployment-<<parameters.environment>>-$(date -u +'%Y%m%d%H%M%S')"
+            tag="deployment-<<parameters.environment>>-$(date -u +'%Y%m%d%H%M%S%N')"
             git tag $tag
             git push origin $tag
 
