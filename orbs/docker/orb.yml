@@ -42,6 +42,10 @@ commands:
         description: "The tag of the image."
         type: string
         default: "git-$CIRCLE_SHA1"
+      tag_latest:
+        description: "Tag the image with the 'latest' tag."
+        type: boolean
+        default: false
     steps:
       - run:
           name: "Build the image."
@@ -52,6 +56,14 @@ commands:
                          --label org.opencontainers.image.revision=$CIRCLE_SHA1 \
                          -f <<parameters.dockerfile_path>> \
                          <<parameters.dockerfile_directory>>
+      - when:
+          condition: <<parameters.tag_latest>>
+          steps:
+            - run:
+                name: "Tag latest."
+                command: |
+                  docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
+                             <<parameters.image_name>>:latest
 
   check_image_trivy:
     parameters:
@@ -114,6 +126,10 @@ jobs:
         description: "The tag of the Docker image."
         type: string
         default: "git-$CIRCLE_SHA1"
+      tag_latest:
+        description: "Tag the image with the 'latest' tag."
+        type: boolean
+        default: false
     executor: "build"
     steps:
       - checkout
@@ -123,9 +139,16 @@ jobs:
           dockerfile_path: "<<parameters.dockerfile_path>>"
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
+          tag_latest: <<parameters.tag_latest>>
       - check_image_trivy:
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
       - push_image:
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
+      - when:
+          condition: <<parameters.tag_latest>>
+          steps:
+            - push_image:
+                image_name: "<<parameters.image_name>>"
+                image_tag: "latest"
