@@ -213,6 +213,7 @@ jobs:
               --namespace=<<parameters.kubernetes_namespace>> \
               -f <<parameters.helm_value_file_path>> \
               --set=circleci.sha1=$CIRCLE_SHA1 \
+              --set=circleci.branch=$CIRCLE_BRANCH \
               --set=image=<<parameters.docker_image>>:<<parameters.docker_tag>> \
               --wait --timeout=<<parameters.helm_upgrade_timeout>> \
               --install <<parameters.helm_release_name>> <<parameters.helm_chart_path>>
