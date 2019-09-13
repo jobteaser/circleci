@@ -31,7 +31,5 @@ RUN apt-get update -y && \
       install -m755 tiller /usr/local/bin/tiller \
     ) && \
     \
-    apt-get remove --purge -y \
-      wget && \
     apt-get autoremove -y && \
     apt-get clean -y
