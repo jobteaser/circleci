@@ -121,6 +121,36 @@ commands:
             git push origin $tag
 
 jobs:
+  push:
+    parameters:
+      helm_repo_url:
+        description: "Helm repository URL"
+        default: "$HELM_REPO_URL"
+        type: string
+      helm_repo_user:
+        description: "Helm repository username"
+        default: "$HELM_REPO_USER"
+        type: string
+      helm_repo_pass:
+        description: "Helm repository password"
+        default: "$HELM_REPO_PASS"
+        type: string
+      helm_chart_path:
+        description: "The path of the Helm chart."
+        type: string
+        default: "./k8s/$CIRCLE_PROJECT_REPONAME"
+    executor: "deploy"
+    steps:
+      - checkout
+      - run:
+          name: "Push Helm chart to remote repo"
+          command: |
+            cd <<parameters.helm_chart_path>>
+            helm init --client-only
+            helm plugin install https://github.com/chartmuseum/helm-push
+            helm repo add --username <<parameters.helm_repo_user>> --password <<parameters.helm_repo_pass>> jt <<parameters.helm_repo_url>>
+            helm repo update
+            helm push . jt
   deploy:
     parameters:
       environment:
