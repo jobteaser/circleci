@@ -77,6 +77,8 @@ A new project must perform the following steps to use the CI/CD pipeline:
     - name: regcred
   ```
   This will allow Kubernetes to pull images from DockerHub.
+- If your Kubernetes setup mounts any secret, make sure these are created
+  manually before the first deployment.
 - Commit and push your branch. This will trigger the first build.
 - Merge the branch in `master`. This will trigger a build and the first
   deployment.
