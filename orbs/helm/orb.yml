@@ -150,6 +150,7 @@ jobs:
             helm plugin install https://github.com/chartmuseum/helm-push
             helm repo add --username <<parameters.helm_repo_user>> --password <<parameters.helm_repo_pass>> jt <<parameters.helm_repo_url>>
             helm repo update
+            helm dep update
             helm push . jt
   deploy:
     parameters:
