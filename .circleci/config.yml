@@ -54,9 +54,6 @@ workflows:
       - validate
       - publish_dev:
           requires: ["validate"]
-          filters:
-            branches:
-              only: ["master"]
       - publish_stable:
           requires: ["validate"]
           filters:
