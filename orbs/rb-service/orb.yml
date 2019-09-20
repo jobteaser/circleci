@@ -52,7 +52,7 @@ jobs:
       - run:
           name: "Run tests"
           command: |
-            bundle exec rake test
+            bundle exec rspec
       - save_ruby_bundle_cache
 
   build:
