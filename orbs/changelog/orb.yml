@@ -6,7 +6,10 @@ description: |
 executors:
   default:
     docker:
-      - image: "ubuntu:18.04"
+      - image: "jobteaser/circleci-changelog-publish:latest"
+        auth:
+          username: "$DOCKER_LOGIN"
+          password: "$DOCKER_PASSWORD"
 
 jobs:
   publish:
@@ -25,13 +28,6 @@ jobs:
         default: ":poop:"
     executor: "default"
     steps:
-      - run:
-          name: "Install dependencies"
-          command: |
-            apt-get update -y
-            apt-get install -y git openssh-client ca-certificates curl jq
-            curl -sL https://deb.nodesource.com/setup_10.x | bash -
-            apt-get install -y nodejs
       - checkout
       - run:
           name: "Publish the changelog"
