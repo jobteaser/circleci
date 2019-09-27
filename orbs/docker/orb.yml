@@ -130,6 +130,10 @@ jobs:
         description: "Tag the image with the 'latest' tag."
         type: boolean
         default: false
+      check_image_trivy:
+        description: "Check the image with the Trivy vulnerability scanner."
+        type: boolean
+        default: true
     executor: "build"
     steps:
       - checkout
@@ -140,9 +144,12 @@ jobs:
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
           tag_latest: <<parameters.tag_latest>>
-      - check_image_trivy:
-          image_name: "<<parameters.image_name>>"
-          image_tag: "<<parameters.image_tag>>"
+      - when:
+          condition: <<parameters.check_image_trivy>>
+          steps:
+            - check_image_trivy:
+                image_name: "<<parameters.image_name>>"
+                image_tag: "<<parameters.image_tag>>"
       - push_image:
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
