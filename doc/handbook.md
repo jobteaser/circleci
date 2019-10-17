@@ -1,4 +1,3 @@
-
 # Introduction
 This document describes the CI and CD pipelines for JobTeaser services, and
 explains how to use and maintain CircleCI orbs.
@@ -56,20 +55,10 @@ A new project must perform the following steps to use the CI/CD pipeline:
   Note: you can use the following commands to extract the token and certificate
   (you'll need jq installed first).
   ```sh
-  kubectl get secret <secret-name> -o json | jq -r '.data.token' | base64 --decode
-  kubectl get secret <secret-name> -o json | jq -r '.data."ca.crt"'
+  secret_name=$(kubectl get serviceaccount circleci -o json | jq -r '.secrets[0].name')
+  kubectl get secret $secret_name -o json | jq -r '.data.token' | base64 --decode
+  kubectl get secret $secret_name -o json | jq -r '.data."ca.crt"'
   ```
-- Create in both staging and prod a kubernetes secret for DockerHub
-  credentials:
-  ```sh
-  kubectl create secret docker-registry regcred           \
-        --docker-server=https://index.docker.io/v1/       \
-        --docker-username=jobteaserfoundation             \
-        --docker-password=$DOCKER_PASSWORD                \
-        --docker-email=foundation+dockerhub@jobteaser.com
-  ```
-  The password of the `jobteaserfoundation` DockerHub account is available in
-  the chapter backend group of Bitwarden.
 - Edit the default service account (`kubectl edit serviceaccount default`) and
   add:
   ```yaml
