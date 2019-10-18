@@ -148,7 +148,8 @@ jobs:
             cd <<parameters.helm_chart_path>>
             helm init --client-only
             helm plugin install https://github.com/chartmuseum/helm-push
-            helm repo add --username <<parameters.helm_repo_user>> --password <<parameters.helm_repo_pass>> jt <<parameters.helm_repo_url>>
+            helm repo add --username <<parameters.helm_repo_user>> --password <<parameters.helm_repo_pass>> jobteaser-private <<parameters.helm_repo_url>>
+            helm repo add jobteaser-public https://jobteaser.github.io/charts
             helm repo update
             helm dep update
             helm push . jt
