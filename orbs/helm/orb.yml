@@ -66,6 +66,7 @@ commands:
             helm lint \
               -f <<parameters.helm_value_file_path>> \
               --set=circleci.sha1=$CIRCLE_SHA1 \
+              --set=circleci.branch=$CIRCLE_BRANCH \
               <<parameters.helm_chart_path>>
 
   expand_helm_templates:
@@ -96,6 +97,7 @@ commands:
               -n <<parameters.helm_release_name>> \
               -f <<parameters.helm_value_file_path>> \
               --set=circleci.sha1=$CIRCLE_SHA1 \
+              --set=circleci.branch=$CIRCLE_BRANCH \
               --output-dir /tmp/helm-templates/<<parameters.environment>> \
               <<parameters.helm_chart_path>>
       - store_artifacts:
