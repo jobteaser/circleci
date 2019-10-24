@@ -154,7 +154,7 @@ jobs:
             helm repo add jobteaser-public https://jobteaser.github.io/charts
             helm repo update
             helm dep update
-            helm push . jt
+            helm push . jobteaser-private
   deploy:
     parameters:
       environment:
