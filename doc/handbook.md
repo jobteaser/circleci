@@ -46,14 +46,14 @@ A new project must perform the following steps to use the CI/CD pipeline:
 
   CircleCI will need a user token and a CA certificate to connect to staging
   and prod Kubernetes clusters. These data are stored in a Kubernetes secret
-  of each namespace named `<namespace>-ci-token-token-<id>`. You can use
-  `kubectl get secret <name> -o yaml` to obtain the certificate and the token.
-  User token environment variables use decoded forms (i.e. use `base64 -d` on
-  the content of the secret entry). CA certificates environment variables must
-  be base64-encoded.
+  of each namespace named `circleci-token-<id>`. You can use `kubectl get
+  secret <name> -o yaml` to obtain the certificate and the token.  User token
+  environment variables use decoded forms (i.e. use `base64 -d` on the content
+  of the secret entry). CA certificates environment variables must be
+  base64-encoded.
 
   Note: you can use the following commands to extract the token and certificate
-  (you'll need jq installed first).
+  (you'll need jq installed first):
   ```sh
   secret_name=$(kubectl get serviceaccount circleci -o json | jq -r '.secrets[0].name')
   kubectl get secret $secret_name -o json | jq -r '.data.token' | base64 --decode
