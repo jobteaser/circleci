@@ -1,0 +1,22 @@
+FROM ubuntu:18.04
+
+LABEL vendor="JobTeaser"
+LABEL maintainer="opensource@jobteaser.com"
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt-get update -y && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+      # base
+      ca-certificates \
+      # checkout
+      git openssh-client \
+      # node installation
+      bash curl \
+    && \
+    curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
+    apt-get install -y --no-install-recommends nodejs && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get autoremove -y && \
+    apt-get clean -y

@@ -1,0 +1,39 @@
+version: 2.1
+
+description: |
+  Record deployment on NewRelic API
+
+executors:
+  default:
+    docker:
+      - image: "jobteaser/circleci-newrelic-deploy:latest"
+        auth:
+          username: "$DOCKER_LOGIN"
+          password: "$DOCKER_PASSWORD"
+
+jobs:
+  publish:
+    parameters:
+      environment:
+        description: "The runtime environment."
+        type: string
+        default: "staging"
+      app_id:
+        description: "The APP_ID of the application."
+        type: string
+        default: "$NEWRELIC_APP_ID"
+      api_key:
+        description: "The API_KEY of the account."
+        type: string
+        default: "$NEWRELIC_API_KEY"
+    executor: "default"
+    steps:
+      - checkout
+      - run:
+          name: "Record the deployment on NewRelic"
+          command: |
+            url="https://api.newrelic.com/v2/applications/<<parameters.app_id>>/deployments.json"
+            curl -X POST $url \
+                 -H 'X-Api-Key: <<parameters.api_key>>' -i \
+                 -H 'Content-Type: application/json' \
+                 -d "{ \"deployment\": { \"revision\": \"$CIRCLE_SHA1\" } }"
