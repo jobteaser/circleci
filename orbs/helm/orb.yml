@@ -173,10 +173,6 @@ jobs:
         description: "The Kubernetes namespace."
         type: string
         default: "$CIRCLE_PROJECT_REPONAME"
-      kubernetes_deployment:
-        description: "The name of the Kubernetes deployment."
-        type: string
-        default: "$CIRCLE_PROJECT_REPONAME-$CIRCLE_BRANCH"
       kubernetes_endpoint:
         description: "The URL of the Kubernetes API endpoint."
         type: string
