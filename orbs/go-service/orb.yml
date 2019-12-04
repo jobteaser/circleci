@@ -79,4 +79,5 @@ jobs:
       - docker/setup
       - docker/login
       - docker/build_image
+      - docker/check_image_trivy
       - docker/push_image
