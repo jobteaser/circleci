@@ -71,6 +71,7 @@ jobs:
           command: |
             bundle package --all --all-platforms
       - save_ruby_bundle_cache
+      - service/generate_build_info
       - docker/setup
       - docker/login
       - docker/build_image
