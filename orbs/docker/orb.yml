@@ -123,10 +123,6 @@ jobs:
         description: "Tag the image with the 'latest' tag."
         type: boolean
         default: false
-      check_image_trivy:
-        description: "Check the image with the Trivy vulnerability scanner (deprecated)"
-        type: boolean
-        default: true
     executor: "build"
     steps:
       - checkout
