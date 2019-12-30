@@ -62,13 +62,6 @@ A new project must perform the following steps to use the CI/CD pipeline:
         curl -sSL https://raw.githubusercontent.com/jobteaser/circleci/master/utils/configure-project \
             | sh -s -- -t <circleci-token> <service-name>
 
-- Edit the default service account (`kubectl edit serviceaccount default`) and
-  add:
-  ```yaml
-  imagePullSecrets:
-      - name: regcred
-  ```
-  This will allow Kubernetes to pull images from DockerHub.
 - If your Kubernetes setup mounts any secret, make sure these are created
   manually before the first deployment.
 - Commit and push your branch. This will trigger the first build.
