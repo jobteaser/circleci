@@ -25,7 +25,7 @@ configure_circleci_project() {
     --vcs-type github \
     --username jobteaser \
     --project "$service_name" set "K8S_USER_TOKEN_$suffix" "$token"
-    
+
     circleci-env \
         --token "$CIRCLECI_TOKEN" \
         --vcs-type github \
@@ -43,7 +43,14 @@ OPTIONS
 EOF
 }
 
-CIRCLECI_TOKEN=""
+CIRCLECI_TOKEN=${CIRCLECI_TOKEN:-""}
+if [ -z "$CIRCLECI_TOKEN" ]; then
+    circleci_cli_cfg_path=$HOME/.circleci/cli.yml
+
+    if [ -f $circleci_cli_cfg_path ]; then
+        CIRCLECI_TOKEN=$(awk '/^token:/ {print $2}' $circleci_cli_cfg_path)
+    fi
+fi
 
 OPTIND=1
 while getopts 'ht:' arg; do
