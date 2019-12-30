@@ -1,0 +1,66 @@
+#!/usr/bin/env sh
+
+set -eu
+
+fatal() {
+    printf "$*\n" > /dev/stderr
+    exit 1
+}
+
+configure_circleci_project() {
+    local context_name service_name suffix secret_name token ca_crt
+
+    context_name="$1"
+    service_name="$2"
+    suffix="$3"
+
+    kubectx "$context_name"
+    kubens "$service_name"
+    secret_name=$(kubectl get serviceaccount circleci -o jsonpath='{.secrets[0].name}')
+    token=$(kubectl get secret "$secret_name" -o jsonpath='{.data.token}' | base64 --decode)
+    ca_crt=$(kubectl get secret "$secret_name" -o jsonpath="{.data['ca\.crt']}")
+
+    circleci-env \
+    --token "$CIRCLECI_TOKEN" \
+    --vcs-type github \
+    --username jobteaser \
+    --project "$service_name" set "K8S_USER_TOKEN_$suffix" "$token"
+    
+    circleci-env \
+        --token "$CIRCLECI_TOKEN" \
+        --vcs-type github \
+        --username jobteaser \
+        --project "$service_name" set "K8S_CA_CERT_$suffix" "$ca_crt"
+}
+
+usage() {
+    cat <<EOF
+usage: $0 OPTIONS <service-name>
+
+OPTIONS
+-h  display help
+-t  The CircleCI API token
+EOF
+}
+
+CIRCLECI_TOKEN=""
+
+OPTIND=1
+while getopts 'ht:' arg; do
+    case "$arg" in
+        h) usage; exit 0 ;;
+        t) CIRCLECI_TOKEN="$OPTARG" ;;
+        ?) fatal "unknown options" ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+if [ "$#" -lt 1 ]; then
+    fatal "missing argument(s)"
+fi
+service_name="$1"
+
+configure_circleci_project "dev.jt" "$service_name" "STAGING"
+configure_circleci_project "prod.jt" "$service_name" "PROD"
+
+kubectx dev.jt

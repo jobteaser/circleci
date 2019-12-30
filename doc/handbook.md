@@ -32,12 +32,10 @@ A new project must perform the following steps to use the CI/CD pipeline:
   DockerHub repository. This will allow CircleCI to push images it builds to
   DockerHub.
 - Add the initial CircleCI configuration to the project repository. If using a
-  service library such as `go-service`, the project generator already created
-  this configuration. This should be done in a branch.
+  service library such as `go-service` or `rb-service`, the project generator
+  already created this configuration. This should be done in a branch.
 - Add the repository to CircleCI. Do not initiate a build.
-- Add a checkout SSH key in the configuration of the CircleCI project. This is
-  only necessary if the project must access other GitHub repositories, for
-  example if it uses private repositories as dependencies.
+- Add a checkout SSH key in the configuration of the CircleCI project.
 - Add the following environment variables to the CircleCI project:
   - `K8S_CA_CERT_STAGING`
   - `K8S_CA_CERT_PROD`
@@ -45,25 +43,29 @@ A new project must perform the following steps to use the CI/CD pipeline:
   - `K8S_USER_TOKEN_PROD`
 
   CircleCI will need a user token and a CA certificate to connect to staging
-  and prod Kubernetes clusters. These data are stored in a Kubernetes secret
-  of each namespace named `circleci-token-<id>`. You can use `kubectl get
-  secret <name> -o yaml` to obtain the certificate and the token.  User token
-  environment variables use decoded forms (i.e. use `base64 -d` on the content
-  of the secret entry). CA certificates environment variables must be
-  base64-encoded.
+  and prod Kubernetes clusters. This shell command helps you configure your
+  CircleCI.
 
-  Note: you can use the following commands to extract the token and certificate
-  (you'll need jq installed first):
-  ```sh
-  secret_name=$(kubectl get serviceaccount circleci -o json | jq -r '.secrets[0].name')
-  kubectl get secret $secret_name -o json | jq -r '.data.token' | base64 --decode
-  kubectl get secret $secret_name -o json | jq -r '.data."ca.crt"'
-  ```
+  Note: you can use the following commands to extract the token and
+  certificate (you'll need
+  [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/),
+  [kubectx](https://github.com/ahmetb/kubectx) and
+  [circleci-env](https://github.com/jobteaser-oss/circleci-env) installed
+  first):
+
+  - Create a CircleCI token (https://circleci.com/account/api)
+  - Have the
+    [grantor](https://github.com/jobteaser/service/blob/master/doc/howto.md#how-to-delegate-kubernetes-permissions)
+    role on the namespace
+  - Run the following command:
+
+        curl -sSL https://raw.githubusercontent.com/jobteaser/circleci/master/utils/configure-project | sh -s -- -t <circleci-token> <service-name>
+
 - Edit the default service account (`kubectl edit serviceaccount default`) and
   add:
   ```yaml
   imagePullSecrets:
-    - name: regcred
+      - name: regcred
   ```
   This will allow Kubernetes to pull images from DockerHub.
 - If your Kubernetes setup mounts any secret, make sure these are created
