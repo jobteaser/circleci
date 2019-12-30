@@ -59,7 +59,8 @@ A new project must perform the following steps to use the CI/CD pipeline:
     role on the namespace
   - Run the following command:
 
-        curl -sSL https://raw.githubusercontent.com/jobteaser/circleci/master/utils/configure-project | sh -s -- -t <circleci-token> <service-name>
+        curl -sSL https://raw.githubusercontent.com/jobteaser/circleci/master/utils/configure-project \
+            | sh -s -- -t <circleci-token> <service-name>
 
 - Edit the default service account (`kubectl edit serviceaccount default`) and
   add:
