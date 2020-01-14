@@ -21,10 +21,10 @@ configure_circleci_project() {
     ca_crt=$(kubectl get secret "$secret_name" -o jsonpath="{.data['ca\.crt']}")
 
     circleci-env \
-    --token "$CIRCLECI_TOKEN" \
-    --vcs-type github \
-    --username jobteaser \
-    --project "$service_name" set "K8S_USER_TOKEN_$suffix" "$token"
+        --token "$CIRCLECI_TOKEN" \
+        --vcs-type github \
+        --username jobteaser \
+        --project "$service_name" set "K8S_USER_TOKEN_$suffix" "$token"
 
     circleci-env \
         --token "$CIRCLECI_TOKEN" \
