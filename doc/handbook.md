@@ -55,7 +55,7 @@ A new project must perform the following steps to use the CI/CD pipeline:
 
   - Create a CircleCI token (https://circleci.com/account/api)
   - Have the
-    [grantor](https://github.com/jobteaser/service/blob/master/doc/howto.md#how-to-delegate-kubernetes-permissions)
+    [operator](https://github.com/jobteaser/service/blob/master/doc/howto.md#how-to-delegate-kubernetes-permissions)
     role on the namespace
   - Run the following command:
 
