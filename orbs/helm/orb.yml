@@ -236,6 +236,10 @@ jobs:
           helm_release_name: "<<parameters.helm_release_name>>"
           helm_value_file_path: "<<parameters.helm_value_file_path>>"
       - run:
+          name: "Check no other deploy is running"
+          command: |
+            circleci-wait-job
+      - run:
           name: "Install or upgrade the Helm release"
           command: |
             helm upgrade \
