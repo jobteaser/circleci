@@ -8,13 +8,15 @@ ENV KUBE_VERSION 1.14.10
 
 ENV DEBIAN_FRONTEND noninteractive
 
+COPY circle-wait-job /bin/circle-wait-job
+
 RUN apt-get update -y && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
       # base
       wget ca-certificates \
       # checkout
-      git openssh-client \
+      git openssh-client ruby \
     && \
     rm -rf /var/lib/apt/lists/* && \
     ( \
