@@ -23,10 +23,26 @@ class CLI
       define_options!(parser)
       parser.parse!(args)
     end
+
+    must_not_empty("branch", @branch)
+    must_not_empty("interval", @interval)
+    must_not_empty("vcs", @vcs)
+    must_not_empty("current-build-number", @build_number)
+    must_not_empty("token", @token)
+    must_not_empty("job", @job)
+    must_not_empty("organization", @organization)
+    must_not_empty("project", @project)
+
     self
   end
 
   private
+
+  def must_not_empty(key, value)
+    if value.to_s.empty?
+      raise(ArgumentError, "the #{key} is missing or empty")
+    end
+  end
 
   def define_options!(parser)
     parser.banner = "Usage: circleci-wait-job OPTIONS"
@@ -56,7 +72,13 @@ class CLI
 end
 
 cli = CLI.new
-options = cli.parse(ARGV)
+
+begin
+  options = cli.parse(ARGV)
+rescue ArgumentError => e
+  puts(e.message)
+  exit(1)
+end
 
 uri = URI::HTTPS.build(host: "circleci.com",
                        path: File.join("/",
