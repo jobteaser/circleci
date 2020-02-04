@@ -1,7 +1,7 @@
 FROM ubuntu:18.04
 
 LABEL vendor="JobTeaser"
-LABEL maintainer="opensource@jobteaser.com"
+LABEL maintainer="foundation@jobteaser.com"
 
 ENV HELM_VERSION 2.12.3
 ENV KUBE_VERSION 1.14.10
@@ -16,7 +16,9 @@ RUN apt-get update -y && \
       # base
       wget ca-certificates \
       # checkout
-      git openssh-client ruby \
+      git openssh-client \
+      # circle-wait-job
+      ruby \
     && \
     rm -rf /var/lib/apt/lists/* && \
     ( \
