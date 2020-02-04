@@ -56,11 +56,7 @@ class CLI
 end
 
 cli = CLI.new
-if ARGV.size.zero?
-  options = cli.parse(["--help"])
-else
-  options = cli.parse(ARGV)
-end
+options = cli.parse(ARGV)
 
 uri = URI::HTTPS.build(host: "circleci.com",
                        path: File.join("/",
@@ -86,7 +82,7 @@ def other_job_is_running?(uri, job, build_num)
   end
 end
 
-puts("Check no other #{options.job} for #{option.branch} branch is running")
+puts("Check no other #{options.job} for #{options.branch} branch is running")
 
 while other_job_is_running?(uri, options.job.to_s, options.build_number.to_i) do
   puts("Another #{options.job} for #{options.branch} branch already running, check again in #{options.interval} seconds.")
