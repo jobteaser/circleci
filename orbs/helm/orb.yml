@@ -238,7 +238,7 @@ jobs:
       - run:
           name: "Check no other deploy is running"
           command: |
-            circleci-wait-job
+            circle-wait-job
       - run:
           name: "Install or upgrade the Helm release"
           command: |
