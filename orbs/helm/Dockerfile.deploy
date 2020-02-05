@@ -9,6 +9,7 @@ ENV KUBE_VERSION 1.14.10
 ENV DEBIAN_FRONTEND noninteractive
 
 COPY circle-wait-job /bin/circle-wait-job
+COPY deployable /bin/deployable
 
 RUN apt-get update -y && \
     apt-get upgrade -y && \

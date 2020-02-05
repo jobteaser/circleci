@@ -211,7 +211,15 @@ jobs:
         default: false
     executor: "deploy"
     steps:
+      - run:
+          name: "Wait for all other builds to complete"
+          command: |
+            circle-wait-job
       - checkout
+      - run:
+          name: "Ensure that this build is more recent than the last deployed one"
+          command: |
+            deployable -t "deployment-<<parameters.environment>>-*"
       - configure_kubernetes_client:
           kubernetes_ca_cert: "<<parameters.kubernetes_ca_cert>>"
           kubernetes_endpoint: "<<parameters.kubernetes_endpoint>>"
@@ -235,10 +243,6 @@ jobs:
           helm_chart_path: "<<parameters.helm_chart_path>>"
           helm_release_name: "<<parameters.helm_release_name>>"
           helm_value_file_path: "<<parameters.helm_value_file_path>>"
-      - run:
-          name: "Check no other deploy is running"
-          command: |
-            circle-wait-job
       - run:
           name: "Install or upgrade the Helm release"
           command: |
