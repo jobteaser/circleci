@@ -35,7 +35,7 @@ if [ ! -d ".git" ]; then
 fi
 
 last_tag=$(git tag --sort version:refname --list "$pattern" | tail -1)
-if [ "$last_tag" ]; then
+if [ -z "$last_tag" ]; then
     exit 0
 fi
 
