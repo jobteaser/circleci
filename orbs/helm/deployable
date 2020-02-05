@@ -1,0 +1,47 @@
+#!/usr/bin/env sh
+
+set -eu
+
+fatal() {
+    printf "$*\n" >/dev/stderr
+    exit 1
+}
+
+usage() {
+    cat <<EOF
+usage: $0 OPTIONS <name>
+
+OPTIONS
+
+-h display help
+-p tag pattern (default: $pattern)
+EOF
+}
+
+pattern="*"
+
+OPTIND=1
+while getopts 'hp:' arg; do
+    case "$arg" in
+	h) usage; exit 0 ;;
+	p) pattern="$OPTARG" ;;
+	?) fatal "unknown option" ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+if [ ! -d ".git" ]; then
+    fatal "no git repository found"
+fi
+
+last_tag=$(git tag --sort version:refname --list "$pattern" | tail -1)
+if [ "$last_tag" ]; then
+    exit 0
+fi
+
+deployed_sha1=$(git rev-parse "$last_tag")
+current_sha1=$(git rev-parse HEAD)
+
+if [ "$(git rev-list $deployed_sha1 | grep $current_sha1)" ]; then
+    fatal "the current build is older than the deployed one"
+fi
