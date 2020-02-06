@@ -219,7 +219,7 @@ jobs:
       - run:
           name: "Ensure that this build is more recent than the last deployed one"
           command: |
-            deployable -t "deployment-<<parameters.environment>>-*"
+            deployable -p "deployment-<<parameters.environment>>-*"
       - configure_kubernetes_client:
           kubernetes_ca_cert: "<<parameters.kubernetes_ca_cert>>"
           kubernetes_endpoint: "<<parameters.kubernetes_endpoint>>"
