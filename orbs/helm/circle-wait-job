@@ -100,7 +100,7 @@ def other_job_is_running?(uri, job, build_num)
   builds = JSON.parse(response)
 
   builds.any? do |build|
-    build.dig("workflows", "job_name").to_s == job && build["build_num"] != build_num
+    build.dig("workflows", "job_name").to_s == job && build["build_num"] < build_num
   end
 end
 
