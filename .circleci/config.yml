@@ -11,7 +11,7 @@ commands:
       - run:
           name: "Install the CircleCI command line program"
           command: |
-            curl -fLSs https://circle.ci/cli | bash
+            curl --http1.1 -fLSs https://circle.ci/cli | bash
             circleci update
 
 jobs:
