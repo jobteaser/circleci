@@ -55,6 +55,7 @@ commands:
                          --label org.opencontainers.image.url=https://github.com/jobteaser/$CIRCLE_PROJECT_REPONAME \
                          --label org.opencontainers.image.revision=$CIRCLE_SHA1 \
                          -f <<parameters.dockerfile_path>> \
+                         --pull \
                          <<parameters.dockerfile_directory>>
       - when:
           condition: <<parameters.tag_latest>>
