@@ -260,3 +260,76 @@ jobs:
           steps:
             - tag_deployment:
                 environment: "<<parameters.environment>>"
+
+
+  delete_branch_deployment:
+    executor: helm/deploy
+    parameters:
+      helm_chart_path:
+        description: "The path of the Helm chart."
+        type: string
+        default: "./k8s/$CIRCLE_PROJECT_REPONAME"
+      helm_release_base:
+        description: "Base for helm release names"
+        type: string
+        default: "$CIRCLE_PROJECT_REPONAME"
+      helm_release_name:
+        description: "The helm release name."
+        type: string
+        default: "$CIRCLE_PROJECT_REPONAME-$MERGED_BRANCH"
+      kubernetes_ca_cert:
+        description: "User authentification token to be granted deployment rights"
+        default: "$K8S_CA_CERT_STAGING"
+      kubernetes_endpoint:
+        description: "The URL of the Kubernetes API endpoint."
+        type: string
+        default: "$K8S_ENDPOINT"
+      kubernetes_namespace:
+        description: "The Kubernetes namespace."
+        type: string
+        default: "$CIRCLE_PROJECT_REPONAME"
+      kubernetes_user_token:
+        description: "User authentification token to be granted deployment rights"
+        type: string
+        default: "$K8S_USER_TOKEN_STAGING"
+    steps:
+      - checkout  # Grab bits of git history.
+      - helm/configure_kubernetes_client:
+          # We use env. var to make "sure" those cannot be accidentally
+          # overidden. That way somewhat cannot accidentally delete
+          # deployments in production. It does not prevent someone from
+          # overriding the value in his/her repo .circleci/config.yml
+          # file, but that would no longer be accidental)
+          # If someone use the wrong context, the variable will be undefined.
+          kubernetes_ca_cert: "$K8S_CA_CERT_STAGING"
+          # Could use similar precaution here ? (not as-is: variable name
+          # shared between prod & staging)
+          kubernetes_endpoint: "<<parameters.kubernetes_endpoint>>"
+          # Same as above here
+          kubernetes_user_token: "$K8S_USER_TOKEN_STAGING"
+          kubernetes_namespace:  "<<parameters.kubernetes_namespace>>"
+      - run:
+          name: "Initialize Helm"
+          command: |
+            helm init --client-only
+      - run:
+          name: "Delete development deployments"
+          command: |
+            # Ensures last commit is a merge commit (by def as more than 1 parent,
+            # in practice has 2 parents). Wouldn't know how to handle the case
+            # where the merge has more than 2 parents so we do nothing in any other
+            # case
+            [ 2 -ne "$(git log --pretty=%P -n 1 HEAD | wc -w)" ] && exit 0
+            # Get branch name from "standard" merge commit (brittle, how can we do better)
+            MERGED_BRANCH="$(git log -1 HEAD | sed -nEe '/Merge pull request/s,^( +Merge pull request #[1-9][0-9]+ from jobteaser/)(.*)$,\2,p')"
+            [ -z "$MERGED_BRANCH" ] && exit 0
+            helm --tiller-namespace "<<parameters.kubernetes_namespace>>" delete --purge "<<parameters.helm_release_base>>-${MERGED_BRANCH}"
+            # To be put in the helm orb ?
+            # Believe it still make quite a few assumptions on the way people
+            # use git:
+            # - Without using `--rebase` Git pull can sometimes merge master
+            #   into a devs branch. Makes for spaghetti git history but it is
+            #   tough to force people to use `git pull --rebase`. And if they
+            #   don't what happens.
+            # - Won't work if people make fast forwards merges without a merge
+            #   commit. Could motivate people not to do that.
