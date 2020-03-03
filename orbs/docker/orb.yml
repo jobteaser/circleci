@@ -29,6 +29,10 @@ commands:
 
   build_image:
     parameters:
+      docker_buildkit:
+        description: "Whether to enable BuildKit or not."
+        type: boolean
+        default: false
       dockerfile_path:
         description: "The path of the dockerfile to build."
         type: string
@@ -53,6 +57,7 @@ commands:
       - run:
           name: "Build the image."
           command: |
+            [ "false" != "<<parameters.docker_buildkit>>" ] && export DOCKER_BUILDKIT=1
             docker build -t <<parameters.image_name>>:<<parameters.image_tag>> \
                          --label org.opencontainers.image.vendor=JobTeaser \
                          --label org.opencontainers.image.url=https://github.com/jobteaser/$CIRCLE_PROJECT_REPONAME \
@@ -107,6 +112,10 @@ commands:
 jobs:
   build_image:
     parameters:
+      docker_buildkit:
+        description: "Whether to enable BuildKit or not."
+        type: boolean
+        default: false
       dockerfile_path:
         description: "The path of the dockerfile to build."
         type: string
@@ -133,6 +142,7 @@ jobs:
       - setup
       - login
       - build_image:
+          docker_buildkit: "<<parameters.docker_buildkit>>"
           dockerfile_path: "<<parameters.dockerfile_path>>"
           dockerfile_directory: "<<parameters.dockerfile_directory>>"
           image_name: "<<parameters.image_name>>"
