@@ -8,14 +8,15 @@ fatal() {
 }
 
 configure_circleci_project() {
-    local context_name service_name suffix secret_name token ca_crt
+    local context_name namespace_name service_name suffix secret_name token ca_crt
 
     context_name="$1"
     service_name="$2"
-    suffix="$3"
+    namespace_name="$3"
+    suffix="$4"
 
     kubectx "$context_name"
-    kubens "$service_name"
+    kubens "$namespace_name"
     secret_name=$(kubectl get serviceaccount circleci -o jsonpath='{.secrets[0].name}')
     token=$(kubectl get secret "$secret_name" -o jsonpath='{.data.token}' | base64 --decode)
     ca_crt=$(kubectl get secret "$secret_name" -o jsonpath="{.data['ca\.crt']}")
@@ -39,6 +40,8 @@ usage: $0 OPTIONS <service-name>
 
 OPTIONS
 -h  display help
+-n  kubernetes namespace name (if not the same as the service
+    name)
 -t  The CircleCI API token
 EOF
 }
@@ -53,9 +56,10 @@ if [ -z "$CIRCLECI_TOKEN" ]; then
 fi
 
 OPTIND=1
-while getopts 'ht:' arg; do
+while getopts 'hn:t:' arg; do
     case "$arg" in
         h) usage; exit 0 ;;
+        n) namespace_name="$OPTARG" ;;
         t) CIRCLECI_TOKEN="$OPTARG" ;;
         ?) fatal "unknown options" ;;
     esac
@@ -66,8 +70,9 @@ if [ "$#" -lt 1 ]; then
     fatal "missing argument(s)"
 fi
 service_name="$1"
+namespace_name="${namespace_name:-$service_name}"
 
-configure_circleci_project "dev.jt" "$service_name" "STAGING"
-configure_circleci_project "prod.jt" "$service_name" "PROD"
+configure_circleci_project "dev.jt" "$service_name" "$namespace_name" "STAGING"
+configure_circleci_project "prod.jt" "$service_name" "$namespace_name" "PROD"
 
 kubectx dev.jt
