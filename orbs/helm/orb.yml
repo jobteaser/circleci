@@ -193,6 +193,10 @@ jobs:
         description: "The Helm release name."
         type: string
         default: "$CIRCLE_PROJECT_REPONAME-$CIRCLE_BRANCH"
+      helm_wait_for_ready:
+        description: "Whether or not to wait for the pods being actually ready."
+        type: boolean
+        default: true
       helm_upgrade_timeout:
         description: "The amount of time to wait for the Helm release upgrade to finish in seconds."
         type: integer
@@ -253,7 +257,8 @@ jobs:
               --set=circleci.sha1=$CIRCLE_SHA1 \
               --set=circleci.branch=$CIRCLE_BRANCH \
               --set=image=<<parameters.docker_image>>:<<parameters.docker_tag>> \
-              --wait --timeout=<<parameters.helm_upgrade_timeout>> \
+              --wait=<<parameters.helm_wait_for_ready>> \
+              --timeout=<<parameters.helm_upgrade_timeout>> \
               --install <<parameters.helm_release_name>> <<parameters.helm_chart_path>>
       - when:
           condition: <<parameters.tag_deployment>>
