@@ -1,0 +1,67 @@
+version: 2.1
+
+description: |
+  Standard jobs for services using the erl-service Erlang application.
+
+orbs:
+  service: "jobteaser/service@dev:master"
+  docker: "jobteaser/docker@dev:master"
+
+executors:
+  ci:
+    docker:
+      - image: "jobteaser/erl-service-ci:latest"
+        auth:
+          username: "$DOCKER_LOGIN"
+          password: "$DOCKER_PASSWORD"
+
+jobs:
+  test:
+    parameters:
+      executor:
+        description: "The executor to use for the job."
+        type: "executor"
+        default: "ci"
+    executor: "<<parameters.executor>>"
+    steps:
+      - service/configure_ssh
+      - service/configure_git
+      - checkout
+      - run:
+          name: "Run type analysis"
+          command: |
+            make dialyzer
+      - run:
+          name: "Run tests"
+          command: |
+            make test
+
+  build:
+    parameters:
+      executor:
+        description: "The executor to use for the job."
+        type: "executor"
+        default: "ci"
+    executor: "<<parameters.executor>>"
+    steps:
+      - service/configure_ssh
+      - service/configure_git
+      - checkout
+      - service/generate_build_info
+      - run:
+          name: "Build the project"
+          command: |
+            make release
+            tarball=$CIRCLE_PROJECT_REPONAME-$CIRCLE_SHA1.tar.gz
+            if [ ! -f $tarball ]; then
+              echo "missing release tarball at $tarball" >&2
+              exit 1
+            fi
+            cp $tarball service.tar.gz
+      - store_artifacts:
+          path: "$CIRCLE_PROJECT_REPONAME-$CIRCLE_SHA1.tar.gz"
+      - docker/setup
+      - docker/login
+      - docker/build_image
+      - docker/check_image_trivy
+      - docker/push_image
