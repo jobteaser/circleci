@@ -28,6 +28,12 @@ jobs:
       - service/configure_git
       - checkout
       - run:
+          # Build before even running dialyzer to get all errors associated
+          # with dependencies, Rebar3, or the execution environment right now.
+          name: "Build the project"
+          command: |
+            make build
+      - run:
           name: "Run type analysis"
           command: |
             make dialyzer
