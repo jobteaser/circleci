@@ -64,8 +64,10 @@ jobs:
               exit 1
             fi
             cp $tarball service.tar.gz
+            mkdir ./release
+            mv $tarball ./release
       - store_artifacts:
-          path: "$CIRCLE_PROJECT_REPONAME-$CIRCLE_SHA1.tar.gz"
+          path: "./release"
       - docker/setup
       - docker/login
       - docker/build_image
