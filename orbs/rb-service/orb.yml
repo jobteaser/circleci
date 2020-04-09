@@ -69,7 +69,7 @@ jobs:
       - run:
           name: "Package dependencies"
           command: |
-            bundle package --all --all-platforms
+            bundle package --all-platforms
       - save_ruby_bundle_cache
       - service/generate_build_info
       - docker/setup
