@@ -21,8 +21,8 @@ commands:
       - save_cache:
           key: $CIRCLE_PROJECT_REPONAME-{{ .Branch }}-{{ checksum "Gemfile.lock" }}-v1
           paths:
-            - "/vendor/bundle"
-            - "/vendor/cache"
+            - "vendor/bundle"
+            - "vendor/cache"
 
   restore_ruby_bundle_cache:
     steps:
@@ -69,6 +69,7 @@ jobs:
       - run:
           name: "Package dependencies"
           command: |
+            bundle config cache_all true
             bundle package --all-platforms
       - save_ruby_bundle_cache
       - service/generate_build_info
