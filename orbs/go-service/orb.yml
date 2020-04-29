@@ -39,7 +39,7 @@ jobs:
       pre_test_command:
         description: "A shell command to execute before running the test suite."
         type: "string"
-        default: ""
+        default: "true"
     executor: "<<parameters.executor>>"
     steps:
       - service/configure_ssh
@@ -53,9 +53,7 @@ jobs:
       - run:
           name: "Run tests"
           command: |
-            if [ "<<parameters.pre_test_command>>" ]; then
-              <<parameters.pre_test_command>>
-            fi
+            <<parameters.pre_test_command>>
             make test
       - save_go_pkg_cache
 
