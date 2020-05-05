@@ -19,7 +19,7 @@ commands:
   save_go_pkg_cache:
     steps:
       - save_cache:
-          key: $CIRCLE_PROJECT_REPONAME-{{ .Branch }}-{{ checksum "go.sum" }}-v1
+          key: $CIRCLE_PROJECT_REPONAME-v2-{{ .Branch }}-{{ checksum "go.sum" }}
           paths:
             - "/go/pkg"
 
@@ -27,7 +27,9 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - $CIRCLE_PROJECT_REPONAME-{{ .Branch }}-{{ checksum "go.sum" }}-v1
+            - $CIRCLE_PROJECT_REPONAME-v2-{{ .Branch }}-{{ checksum "go.sum" }}
+            - $CIRCLE_PROJECT_REPONAME-v2-{{ .Branch }}
+            - $CIRCLE_PROJECT_REPONAME-v2-
 
 jobs:
   test:
