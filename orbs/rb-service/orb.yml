@@ -19,7 +19,7 @@ commands:
   save_ruby_bundle_cache:
     steps:
       - save_cache:
-          key: $CIRCLE_PROJECT_REPONAME-{{ .Branch }}-{{ checksum "Gemfile.lock" }}-v1
+          key: $CIRCLE_PROJECT_REPONAME-v2-{{ .Branch }}-{{ checksum "Gemfile.lock" }}
           paths:
             - "vendor/bundle"
             - "vendor/cache"
