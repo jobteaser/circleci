@@ -28,7 +28,9 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - $CIRCLE_PROJECT_REPONAME-{{ .Branch }}-{{ checksum "Gemfile.lock" }}-v1
+            - $CIRCLE_PROJECT_REPONAME-v2-{{ .Branch }}-{{ checksum "Gemfile.lock" }}
+            - $CIRCLE_PROJECT_REPONAME-v2-{{ .Branch }}
+            - $CIRCLE_PROJECT_REPONAME-v2-
 
 jobs:
   test:
