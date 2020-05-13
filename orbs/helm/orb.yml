@@ -46,12 +46,13 @@ commands:
             dimensions=$(jo environment="<<parameters.environment>>" app="<<parameters.service_name>>" git-sha1="$CIRCLE_SHA1")
             properties=$(jo git-sha1="$CIRCLE_SHA1")
             event=$(jo category="<<parameters.event_category>>" eventType="<<parameters.event_name>>" dimensions="$dimensions" properties="$properties")
+            events=$(jo -a "$event")
 
             curl \
               -X POST \
               -H "Content-Type: application/json" \
               -H "X-SF-Token: <<parameters.signalfx_access_token>>" \
-              -d "$(jo -a $event)" \
+              -d "$events" \
               <<parameters.signalfx_endpoint>>
 
   configure_kubernetes_client:
