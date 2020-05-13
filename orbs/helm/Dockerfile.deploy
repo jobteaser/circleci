@@ -15,7 +15,7 @@ RUN apt-get update -y && \
     apt-get upgrade -y && \
     apt-get install -y --no-install-recommends \
       # base
-      wget ca-certificates \
+      wget ca-certificates jo \
       # checkout
       git openssh-client \
       # circle-wait-job

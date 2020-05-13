@@ -43,9 +43,9 @@ commands:
       - run:
           name: "Create SignalFx event"
           command: |
-            dimensions=$(jo environment="<<parameters.environment>>" app="<<parameters.service_name>> git-sha1="$CIRCLE_SHA1")
+            dimensions=$(jo environment="<<parameters.environment>>" app="<<parameters.service_name>>" git-sha1="$CIRCLE_SHA1")
             properties=$(jo git-sha1="$CIRCLE_SHA1")
-            event=$(jo category=USER_DEFINED eventType="<<parameters.event_name>>" dimensions="$dimensions" properties="$properties")
+            event=$(jo category="<<parameters.event_category>>" eventType="<<parameters.event_name>>" dimensions="$dimensions" properties="$properties")
 
             curl \
               -X POST \
