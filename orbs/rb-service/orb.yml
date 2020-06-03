@@ -68,11 +68,10 @@ jobs:
       - checkout
       - restore_ruby_bundle_cache
       - run:
-          name: "Package dependencies"
+          name: "Install dependencies"
           command: |
-            bundle config cache_all true
-            bundle package --all-platforms
-      - save_ruby_bundle_cache
+            bundle config set path "vendor/bundle"
+            bundle install --retry=3 --jobs=2 --no-color
       - service/generate_build_info
       - docker/setup
       - docker/login
