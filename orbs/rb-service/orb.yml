@@ -19,7 +19,7 @@ commands:
   save_ruby_bundle_cache:
     steps:
       - save_cache:
-          key: $CIRCLE_PROJECT_REPONAME-v2-{{ .Branch }}-{{ checksum "Gemfile.lock" }}
+          key: $CIRCLE_PROJECT_REPONAME-v3-{{ .Branch }}-{{ checksum "Gemfile.lock" }}
           paths:
             - "vendor/bundle"
             - "vendor/cache"
@@ -28,9 +28,9 @@ commands:
     steps:
       - restore_cache:
           keys:
-            - $CIRCLE_PROJECT_REPONAME-v2-{{ .Branch }}-{{ checksum "Gemfile.lock" }}
-            - $CIRCLE_PROJECT_REPONAME-v2-{{ .Branch }}
-            - $CIRCLE_PROJECT_REPONAME-v2-
+            - $CIRCLE_PROJECT_REPONAME-v3-{{ .Branch }}-{{ checksum "Gemfile.lock" }}
+            - $CIRCLE_PROJECT_REPONAME-v3-{{ .Branch }}
+            - $CIRCLE_PROJECT_REPONAME-v3-
 
 jobs:
   test:
@@ -47,10 +47,9 @@ jobs:
       - run:
           name: "Install dependencies"
           command: |
-            bundle install \
-              --deployment \
-              --retry=3 \
-              --no-color
+            bundle config set path "vendor/bundle"
+            bundle install --retry=3 --jobs=2 --no-color
+      - save_ruby_bundle_cache
       - run:
           name: "Run tests"
           command: |
