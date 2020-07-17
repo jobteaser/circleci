@@ -46,11 +46,17 @@ commands:
         type: string
         default: "git-$CIRCLE_SHA1"
       tag_latest:
-        description: "Tag the image with the 'latest' tag."
+        description: |
+          NO LONGER USED (only here for backward compatibility)
+
+          Please remove from your CI workflow
         type: boolean
         default: false
       tag_latest_on:
-        description: "Tag the image with the 'latest' tag on specific Git branch."
+        description: |
+          NO LONGER USED (only here for backward compatibility)
+
+          Please remove from your CI workflow
         type: string
         default: "master"
     steps:
@@ -64,21 +70,6 @@ commands:
                          -f <<parameters.dockerfile_path>> \
                          --pull \
                          <<parameters.dockerfile_directory>>
-      - run:
-          name: "Tag latest."
-          command: |
-            if [ "$CIRCLE_BRANCH" = "<<parameters.tag_latest_on>>" ]; then
-              docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
-                         <<parameters.image_name>>:latest
-            fi
-      - when:
-          condition: <<parameters.tag_latest>>
-          steps:
-            - run:
-                name: "Tag latest."
-                command: |
-                  docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
-                             <<parameters.image_name>>:latest
 
   check_image_trivy:
     parameters:
@@ -122,6 +113,8 @@ commands:
           command: |
             docker push <<parameters.image_name>>:<<parameters.image_tag>>
             if [ "$CIRCLE_BRANCH" = "<<parameters.push_latest_on>>" ]; then
+              docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
+                         <<parameters.image_name>>:latest
               docker push <<parameters.image_name>>:latest
             fi
 
@@ -145,7 +138,10 @@ jobs:
         type: string
         default: "git-$CIRCLE_SHA1"
       tag_latest:
-        description: "Tag the image with the 'latest' tag."
+        description: |
+          NO LONGER USED (only here for backward compatibility)
+
+          Please remove from your CI workflow
         type: boolean
         default: false
       tag_latest_on:
@@ -162,8 +158,6 @@ jobs:
           dockerfile_directory: "<<parameters.dockerfile_directory>>"
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
-          tag_latest: <<parameters.tag_latest>>
-          tag_latest_on: <<parameters.tag_latest_on>>
       - check_image_trivy:
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
@@ -171,9 +165,3 @@ jobs:
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
           push_latest_on: <<parameters.tag_latest_on>>
-      - when:
-          condition: <<parameters.tag_latest>>
-          steps:
-            - push_image:
-                image_name: "<<parameters.image_name>>"
-                image_tag: "latest"
