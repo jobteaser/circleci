@@ -39,6 +39,14 @@ jobs:
         description: "The executor to use for the job."
         type: "executor"
         default: "ci"
+      before_test:
+        description: "A shell command to execute before running the test suite."
+        type: "string"
+        default: "true"
+      after_test:
+        description: "A shell command to execute after running the test suite."
+        type: "string"
+        default: "true"
     executor: "<<parameters.executor>>"
     steps:
       - service/configure_ssh
@@ -53,7 +61,9 @@ jobs:
       - run:
           name: "Run tests"
           command: |
+            <<parameters.before_test>>
             bundle exec rake test
+            <<parameters.after_test>>
       - save_ruby_bundle_cache
 
   build:
