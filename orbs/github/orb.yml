@@ -5,6 +5,7 @@ description: |
 
 commands:
   tag_deployment:
+    description: "Create a git tag named 'deployment-<environment>-<date>' and push it on origin."
     parameters:
       environment:
         description: "The runtime environment."
