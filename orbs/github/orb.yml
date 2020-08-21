@@ -23,16 +23,16 @@ commands:
                 fingerprints:
                   - <<parameters.ssh_fingerprint>>
       - checkout:
-          path: ./sources
+          path: ./sources_github
       - run:
           name: "Configure Git"
-          working_directory: ./sources
+          working_directory: ./sources_github
           command: |
             git config --global user.email "dev@jobteaser.com"
             git config --global user.name "Jobtomate CircleCI"
       - run:
           name: "Tag the deployment"
-          working_directory: ./sources
+          working_directory: ./sources_github
           command: |
             tag="deployment-<<parameters.environment>>-$(date -u +'%Y%m%d%H%M%S%N')"
             git tag $tag
