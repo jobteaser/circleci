@@ -1,0 +1,112 @@
+#!/usr/bin/env ruby
+
+require("optparse")
+require("net/http")
+require("json")
+
+class CLI
+  attr_reader(:token, :organization, :project, :job, :branch, :interval, :vcs, :build_number)
+
+  def initialize
+    @branch = ENV["CIRCLE_BRANCH"]
+    @interval = "60"
+    @vcs = "github"
+    @build_number = ENV["CIRCLE_BUILD_NUM"]
+    @token = ENV["CIRCLE_TOKEN"]
+    @job = ENV["CIRCLE_JOB"]
+    @organization = ENV["CIRCLE_PROJECT_USERNAME"]
+    @project = ENV["CIRCLE_PROJECT_REPONAME"]
+  end
+
+  def parse(args)
+    OptionParser.new do |parser|
+      define_options!(parser)
+      parser.parse!(args)
+    end
+
+    must_not_empty("branch", @branch)
+    must_not_empty("interval", @interval)
+    must_not_empty("vcs", @vcs)
+    must_not_empty("current-build-number", @build_number)
+    must_not_empty("token", @token)
+    must_not_empty("job", @job)
+    must_not_empty("organization", @organization)
+    must_not_empty("project", @project)
+
+    self
+  end
+
+  private
+
+  def must_not_empty(key, value)
+    if value.to_s.empty?
+      raise(ArgumentError, "the #{key} is missing or empty")
+    end
+  end
+
+  def define_options!(parser)
+    parser.banner = "Usage: circleci-wait-job OPTIONS"
+    parser.separator("")
+    parser.separator("OPTIONS")
+    parser.separator("")
+
+    parser.on("-t=VALUE", "--token=VALUE", "the circleci api token") { |value| @token = value }
+    parser.on("-o=VALUE", "--organization=VALUE", "the circleci organization name") { |value| @organization = value }
+    parser.on("-p=VALUE", "--project=VALUE", "the circleci project name") { |value| @project = value }
+    parser.on("-j=VALUE", "--job=VALUE", "the circleci job name") { |value| @job = value }
+    parser.on("-b=VALUE", "--branch=VALUE", "the circleci branch") { |value| @branch = value }
+    parser.on("-i=VALUE", "--interval=VALUE", "the wait time between pooling") { |value| @interval = value }
+    parser.on("--vcs=VALUE", "the version control system (default: github)") { |value| @vcs = value }
+    parser.on("--current-build-number=VALUE", "the current circleci build number") { |value| @build_number = value }
+
+    parser.on_tail("-h", "--help", "print help and exit") do
+      puts(parser)
+      exit(0)
+    end
+
+    parser.on_tail("--version", "print version and exit") do
+      puts("v0.0.1")
+      exit(0)
+    end
+  end
+end
+
+cli = CLI.new
+
+begin
+  options = cli.parse(ARGV)
+rescue ArgumentError => e
+  puts(e.message)
+  exit(1)
+end
+
+uri = URI::HTTPS.build(host: "circleci.com",
+                       path: File.join("/",
+                                       "api",
+                                       "v1.1",
+                                       "project",
+                                       options.vcs.to_s,
+                                       options.organization.to_s,
+                                       options.project.to_s,
+                                       "tree",
+                                       options.branch.to_s),
+                       query: URI.encode_www_form({"circle-token" => options.token.to_s,
+                                                   "shallow" => true,
+                                                   "filter" => "running"}))
+
+
+def other_job_is_running?(uri, job, build_num)
+  response = Net::HTTP.get(uri)
+  builds = JSON.parse(response)
+
+  builds.any? do |build|
+    build.dig("workflows", "job_name").to_s == job && build["build_num"] != build_num
+  end
+end
+
+puts("Check no other #{options.job} for #{options.branch} branch is running")
+
+while other_job_is_running?(uri, options.job.to_s, options.build_number.to_i) do
+  puts("Another #{options.job} for #{options.branch} branch already running, check again in #{options.interval} seconds.")
+  sleep(options.interval.to_i)
+end
