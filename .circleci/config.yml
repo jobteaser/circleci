@@ -51,7 +51,10 @@ jobs:
 workflows:
   main:
     jobs:
-      - validate
+      - validate:
+          filters:
+            tags:
+              only: "/^v.*/"
       - publish_dev:
           requires: ["validate"]
       - publish_stable:
