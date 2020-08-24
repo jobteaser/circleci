@@ -1,0 +1,39 @@
+version: 2.1
+
+description: |
+  Github toolbox for your workflows.
+
+commands:
+  tag_deployment:
+    description: "Create a git tag named 'deployment-<environment>-<date>' and push it on origin."
+    parameters:
+      environment:
+        description: "The runtime environment."
+        type: string
+        default: "prod"
+      ssh_fingerprint:
+        description: "An ssh fingerprint (Github 'Deploy key') to allow pushing to Github."
+        type: string
+        default: ""
+    steps:
+      - when:
+          condition: <<parameters.ssh_fingerprint>>
+          steps:
+            - add_ssh_keys:
+                fingerprints:
+                  - <<parameters.ssh_fingerprint>>
+      - checkout:
+          path: ./sources_github
+      - run:
+          name: "Configure Git"
+          working_directory: ./sources_github
+          command: |
+            git config --global user.email "dev@jobteaser.com"
+            git config --global user.name "Jobtomate CircleCI"
+      - run:
+          name: "Tag the deployment"
+          working_directory: ./sources_github
+          command: |
+            tag="deployment-<<parameters.environment>>-$(date -u +'%Y%m%d%H%M%S%N')"
+            git tag $tag
+            git push origin $tag
