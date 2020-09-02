@@ -4,7 +4,7 @@ LABEL vendor="JobTeaser"
 LABEL maintainer="foundation@jobteaser.com"
 
 ENV HELM_VERSION 2.12.3
-ENV KUBE_VERSION 1.14.10
+ENV KUBE_VERSION 1.18.8
 
 ENV DEBIAN_FRONTEND noninteractive
 
