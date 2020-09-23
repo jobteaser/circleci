@@ -5,6 +5,7 @@ LABEL maintainer="foundation@jobteaser.com"
 
 ENV HELM_VERSION 2.12.3
 ENV KUBE_VERSION 1.14.10
+ENV KUBEVAL_VERSION 0.15.0
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -34,6 +35,12 @@ RUN apt-get update -y && \
       cd linux-amd64 && \
       install -m755 helm /usr/local/bin/helm && \
       install -m755 tiller /usr/local/bin/tiller \
+    ) && \
+    ( \
+      cd /tmp && \
+      wget -q https://github.com/instrumenta/kubeval/releases/download/$KUBEVAL_VERSION/kubeval-linux-amd64.tar.gz && \
+      tar -xzf kubeval-linux-amd64.tar.gz && \
+      install -m755 kubeval /usr/local/bin/kubeval \
     ) && \
     \
     apt-get autoremove -y && \
