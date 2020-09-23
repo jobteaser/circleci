@@ -146,6 +146,22 @@ commands:
       - store_artifacts:
           path: "/tmp/helm-templates/<<parameters.environment>>"
 
+  check_helm_templates:
+    description: "Check the Helm templates using Kubeval."
+    parameters:
+      environment:
+        description: "The runtime environment."
+        type: string
+        default: "prod"
+    steps:
+      - run:
+          name: "Check the Helm templates"
+          command: |
+            kubeversion=$(kubectl version -o json | jq '(.serverVersion.major)+"."+(.serverVersion.minor)+".0"')
+            kubeval \
+              -d /tmp/helm-templates/<<parameters.environment>> \
+              -v "$kubeversion"
+
   tag_deployment:
     parameters:
       environment:
@@ -290,6 +306,11 @@ jobs:
           helm_chart_path: "<<parameters.helm_chart_path>>"
           helm_release_name: "<<parameters.helm_release_name>>"
           helm_value_file_path: "<<parameters.helm_value_file_path>>"
+      - when:
+          condition: <<parameters.check_helm_templates>>
+          steps:
+            - check_helm_templates:
+                environment: "<<parameters.environment>>"
       - create_signalfx_event:
           environment: "<<parameters.environment>>"
           event_name: "deployment started"
