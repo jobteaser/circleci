@@ -268,6 +268,10 @@ jobs:
         description: "Whether to check the Helm configuration or not."
         type: boolean
         default: true
+      check_helm_templates:
+        description: "Whether to check the Helm templates or not."
+        type: boolean
+        default: true
       tag_deployment:
         description: "Whether to create a deployment Git tag or not."
         type: boolean
