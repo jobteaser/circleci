@@ -157,10 +157,9 @@ commands:
       - run:
           name: "Check the Helm templates"
           command: |
-            kubeversion=$(kubectl version -o json | jq '(.serverVersion.major)+"."+(.serverVersion.minor)+".0"')
             kubeval \
               -d /tmp/helm-templates/<<parameters.environment>> \
-              -v "$kubeversion"
+              -v "1.15.0"
 
   tag_deployment:
     parameters:
