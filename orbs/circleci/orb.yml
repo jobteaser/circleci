@@ -25,6 +25,7 @@ commands:
         default: 60
     steps:
       - run:
+          working_directory: ./sources_circleci
           name: "Wait for all other builds to complete"
           command: |
             circle-wait-job \
@@ -38,8 +39,8 @@ commands:
         type: string
         default: "prod"
     steps:
-      - checkout:
-          path: ./sources_circleci
+      # - checkout:
+      #     path: ./sources_circleci
       - run:
           working_directory: ./sources_circleci
           name: "Ensure that this build is more recent than the last deployed one"
@@ -66,8 +67,12 @@ jobs:
         type: integer
         default: 60
     steps:
+      - checkout:
+          path: ./sources_circleci
+      # "wait_on_concurrent_job" ensures that builds are delivered in the right "older to newer" order
       - wait_on_concurrent_job:
           job_name: <<parameters.job_name>>
           polling_interval: <<parameters.polling_interval>>
+      # "stop_if_stale" ensures that builds for code that already present on production are not deployed again
       - stop_if_stale:
           environment: <<parameters.environment>>

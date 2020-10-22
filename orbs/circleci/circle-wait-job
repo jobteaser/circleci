@@ -13,6 +13,7 @@ class CLI
     @vcs = "github"
     @build_number = ENV["CIRCLE_BUILD_NUM"]
     @token = ENV["CIRCLE_TOKEN"]
+    @current_job = ENV["CIRCLE_JOB"]
     @job = ENV["CIRCLE_JOB"]
     @organization = ENV["CIRCLE_PROJECT_USERNAME"]
     @project = ENV["CIRCLE_PROJECT_REPONAME"]
@@ -99,11 +100,63 @@ def other_job_is_running?(uri, job, build_num)
   response = Net::HTTP.get(uri)
   builds = JSON.parse(response)
 
-  builds.any? do |build|
-    build.dig("workflows", "job_name").to_s == job && build["build_num"] != build_num
+  # Check if another identical job (most likely a production deployment job) is running for another build
+  has_concurrent_job = builds.any? do |build|
+    is_concurrent_build = build.dig("workflows", "job_name").to_s == job && build["build_num"] != build_num
+    puts("Checking #{build.build_url}...")
+    if is_concurrent_build
+      puts("Found concurrent build: #{build.build_url}")
+    else
+      puts("Not a concurrent build.")
+    end
+    is_concurrent_build
+  end
+
+  puts(has_concurrent_job ? "Found concurrent job" : "No concurrent job found")
+
+  if has_concurrent_job
+    return true
+  else
+    # We know that no "production deployment job" is running but there is a possibility that 2 builds are
+    # running the same job as the current one simultaneously. This means that both builds could enter a
+    # "production deployment job" at the same time after the present job is done. We must avoid it.
+    # Check if another other build is running the same job as the current one (most likely a
+    # concurrent_build_management job).
+    # Iterate on builds and regroup builds by job name in a dict:
+    # Ex: { concurrent_build_management: [build1, build2], test_js: [build3], ...}
+    builds_by_job_name = Hash.new
+    builds.each_entry do |build|
+      build_job_name = build.dig("workflows", "job_name").to_s
+      builds_by_job_name[build_job_name] = builds_by_job_name[build_job_name] || []
+      builds_by_job_name[build_job_name].push(build)
+    end
+    # Look for builds that have a job name == @current_job since the present script is expected to
+    # be called for a job whose concurrent run is not allowed
+    concurrent_builds_for_current_job = builds_by_job_name[@current_job]
+
+    # Iterate on those builds and retrieve git logs for each
+    concurrent_builds_for_current_job.each_entry do |build|
+      print "Build running job #{@current_job} : #{build.build_url}"
+      print `git log --pretty=format:"%H" -2 #{build.vcs_revision} | jo -a`
+    end
+    # send above response to: builds = JSON.parse(response)
+
+    # Now, the present build must determine if it is the oldest build running (regarding its git history)
+    # - if yes, let it continue (return false)
+    # - if no, put it in pause (return true)
+    # An algo:
+    # Use HEAD commit date
+    # Another algo:
+    # If count of build === 1, let it continue
+    # else for each "git log build", take the HEAD and if it is present in another git log, add 1 to a dict
+    # git_heads_occurences {<head>: count_of_occurence}.
+    # After all that, find the entry in dict git_heads_occurences with the higher count. If the head found
+    # is the one of the current build, it means it's the older build to we can let it pass (return false),
+    # if not return true
   end
 end
 
+puts("10")
 puts("Check no other #{options.job} for #{options.branch} branch is running")
 
 while other_job_is_running?(uri, options.job.to_s, options.build_number.to_i) do
