@@ -105,7 +105,7 @@ def other_job_is_running?(uri, job, current_job, build_num)
 
   # Check if another identical job (most likely a production deployment job) is running for another build
   has_concurrent_job = builds.any? do |build|
-    is_concurrent_build = build.dig("workflows", "job_name").to_s == job && build["build_num"] != build_num
+    is_concurrent_build = build.dig("workflows", "job_name").to_s == job
 
     puts("Checking #{build.dig("build_url")}...")
     puts("\t" + (is_concurrent_build ? "Is a concurrent build!" : "Not a concurrent build."))

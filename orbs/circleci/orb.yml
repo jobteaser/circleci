@@ -6,7 +6,7 @@ description: |
 executors:
   concurrent:
     docker:
-      - image: "jobteaser/circleci-circleci-concurrent:0.0.9"
+      - image: "jobteaser/circleci-circleci-concurrent:0.0.10"
         auth:
           username: "$DOCKER_LOGIN"
           password: "$DOCKER_PASSWORD"
