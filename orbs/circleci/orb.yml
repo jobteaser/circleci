@@ -1,0 +1,75 @@
+version: 2.1
+
+description: |
+  CircleCI commmand utilities.
+
+executors:
+  concurrent:
+    docker:
+      - image: "jobteaser/circleci-circleci-concurrent:0.0.11"
+        auth:
+          username: "$DOCKER_LOGIN"
+          password: "$DOCKER_PASSWORD"
+
+commands:
+  wait_on_concurrent_job:
+    description: "Delay present build if concurrent builds running the same job, exist."
+    parameters:
+      job_name:
+        description: "The name of the job that should be running only one at a time."
+        type: string
+        default: "deploy"
+      polling_interval:
+        description: "The polling interval to wait when concurrent jobs are running (in seconds)."
+        type: integer
+        default: 60
+    steps:
+      - run:
+          name: "Wait for all other builds to complete"
+          command: |
+            circle-wait-job \
+              -j <<parameters.job_name>> \
+              -i <<parameters.polling_interval>>
+  stop_if_stale:
+    description: "Stop a build if HEAD of current branch is already present on production."
+    parameters:
+      environment:
+        description: "The runtime environment."
+        type: string
+        default: "prod"
+    steps:
+      - run:
+          working_directory: ./sources_circleci
+          name: "Ensure that this build is more recent than the last deployed one"
+          command: |
+            deployable -p "deployment-<<parameters.environment>>-*"
+
+jobs:
+  concurrent_build_management:
+    description: >
+      A job to be run before a deployment job to ensure that no concurrent
+      deployment job are running.
+    executor: "concurrent"
+    parameters:
+      environment:
+        description: "The runtime environment."
+        type: string
+        default: "prod"
+      job_name:
+        description: "The name of the job that should be running only one at a time."
+        type: string
+        default: "deploy"
+      polling_interval:
+        description: "The polling interval to wait when concurrent jobs are running (in seconds)."
+        type: integer
+        default: 60
+    steps:
+      - checkout:
+          path: ./sources_circleci
+      # "wait_on_concurrent_job" ensures that builds are delivered in the right "older to newer" order
+      - wait_on_concurrent_job:
+          job_name: <<parameters.job_name>>
+          polling_interval: <<parameters.polling_interval>>
+      # "stop_if_stale" ensures that builds for code that already present on production are not deployed again
+      - stop_if_stale:
+          environment: <<parameters.environment>>
