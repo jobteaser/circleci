@@ -1,0 +1,142 @@
+version: 2.1
+
+description: |
+  Run e2e web tests from e2e_jt_tests repo
+
+orbs:
+  service: "jobteaser/service@0.10.0"
+  slack: "circleci/slack@3.4.2"
+
+executors:
+  default:
+    parameters:
+      tags:
+        type: string
+        default: "not @flaky and not @pending and not @browserstack and not @prod"
+      max_instances:
+        type: string
+        default: "30"
+    resource_class: "xlarge"
+    docker:
+      - image: "circleci/openjdk:11.0.8-buster-node-browsers"
+        environment:
+          DEBUG: "false"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          # ensure we use the chromedriver embedded in the docker image
+          # rather than the one from package.json
+          CHROMEDRIVER_FILEPATH: /usr/local/bin/chromedriver
+          FORCE_COLOR: "0"
+          CUCUMBER_TAGS: << parameters.tags >>
+
+commands:
+  clone_test_suite:
+    description: "Clone test suite configuration"
+    steps:
+      - run:
+          name: "clone the test suite"
+          command: |
+            git clone git@github.com:jobteaser/e2e_jt_tests.git
+
+  manage_dependencies:
+    description: "Use cache management for dependencies or install fresh ones"
+    steps:
+      - restore_cache:
+          key: npm-dep-{{ checksum "e2e_jt_tests/package-lock.json" }}
+      - run:
+          working_directory: e2e_jt_tests
+          name: "install dependencies"
+          command: |
+            npm install
+      - save_cache:
+          key: npm-dep-{{ checksum "e2e_jt_tests/package-lock.json" }}
+          paths:
+            - ./e2e_jt_tests/node_modules
+
+  create_report_folder:
+    description: "Create reports directory"
+    steps:
+      - run:
+          working_directory: e2e_jt_tests
+          name: "create reports directory"
+          command: |
+            mkdir -p reports/screenshots
+            mkdir -p reports/webdriverServer
+
+  run_e2e_test:
+    parameters:
+      command:
+        description: "The command to run in e2e_jt_tests repo"
+        type: "string"
+        default: "npm run chrome"
+      e2e_cookie:
+        description: "The cookie to add to bypass rate limit"
+        type: "string"
+        default: $COOKIE_E2E
+    steps:
+      - run:
+          working_directory: e2e_jt_tests
+          name: "run the test suite with chrome on staging"
+#https://circleci.com/docs/2.0/configuration-reference/#default-shell-options
+# in case of failure, do not mark step as failed (experiment of e2e tests on this repo)
+          command: |
+            export BYPASS_RACK_ATTACK=<< parameters.e2e_cookie >>
+            << parameters.command >>
+
+  generate_reporting:
+    description: "generate reports"
+    steps:
+      - store_artifacts:
+          path: "e2e_jt_tests/reports/webdriverServer/"
+      - store_test_results:
+          path: "e2e_jt_tests/reports/junit/"
+      - run:
+          working_directory: e2e_jt_tests
+          name: "Compile allure report"
+          when: "always"
+          command: npm run allure:build
+      - store_artifacts:
+          path: "e2e_jt_tests/reports/allure-report"
+
+  slack_alerting:
+    description: "Generate slack notification in case of failure"
+    steps:
+      - slack/status:
+          channel: "notif-e2e-master"
+          include_job_number_field: false
+          include_project_field: false
+          include_visit_job_action: false
+          fail_only: true
+          failure_message: "E2E $CIRCLE_PROJECT_REPONAME build $CIRCLE_BUILD_NUM failed\n<$CIRCLE_BUILD_URL|See job>"
+          webhook: ${SLACK_WEBHOOK}
+
+jobs:
+  execute_e2e_tests:
+    parameters:
+      tags:
+        type: string
+        default: "not @flaky and not @wip and not @browserstack and not @prod"
+      max_instances:
+        type: string
+        default: "30"
+      command:
+        description: "The command to run in e2e_jt_tests repo"
+        type: "string"
+        default: "npm run chrome"
+      e2e_cookie:
+        description: "The cookie to add to bypass rate limit"
+        type: "string"
+        default: $COOKIE_E2E
+    executor:
+      name: "default"
+      tags: << parameters.tags >>
+      max_instances: << parameters.max_instances >>
+    steps:
+      - service/configure_ssh
+      - clone_test_suite
+      - manage_dependencies
+      - create_report_folder
+      - run_e2e_test:
+          command: << parameters.command >>
+          e2e_cookie: << parameters.e2e_cookie >>
+      - generate_reporting
+      - slack_alerting
