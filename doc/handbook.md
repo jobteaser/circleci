@@ -137,7 +137,8 @@ File used to illustrate in this doc: [https://github.com/jobteaser/circleci/blob
 
 **Example:**
 
-```jobs:
+```
+jobs:
   execute_e2e_tests:
     parameters:
       tags:
@@ -174,7 +175,8 @@ In this case, I have created a job, with parameters. Steps I used are also custo
 
 When your file is configured, you have to create your orb in the repo. Open your terminal on your circleci repo and type:
 
-```circleci orb create jobteaser/orbName
+```
+circleci orb create jobteaser/orbName
 ```
 
 _orbName_ has to be replaced with your orb name (ie your folder name)
@@ -187,12 +189,14 @@ If you have: Error: AUTHORIZATION_FAILURE ask **devex** team to do it for you
 
 **Example:**
 
-```circleci orb publish orbs/<<orbName>>/orb.yml jobteaser/<<orbName>>@dev:orb_e2e_tests
+```
+circleci orb publish orbs/<<orbName>>/orb.yml jobteaser/<<orbName>>@dev:orb_e2e_tests
 ```
 
 Result:
 
-```Orb jobteaser/circleci@dev:orb_e2e_tests was published.
+```
+Orb jobteaser/circleci@dev:orb_e2e_tests was published.
 Please note that this is an open orb and is world-readable.
 Note that your dev label `dev:orb_e2e_tests` can be overwritten by anyone in your organization.
 Your dev orb will expire in 90 days unless a new version is published on the label `dev:orb_e2e_tests`.
@@ -203,7 +207,8 @@ It will generate a temporary orb that can be overwritten if you republished, and
 
 - Now your orb can be used in your other repo. On _conf.yml_ file of your other repo, import your orbs you just published:
 
-```orbs:
+```
+orbs:
   e2e-web: "jobteaser/e2e-web@dev:orb_e2e_tests"
 ```
 
@@ -211,7 +216,8 @@ You can now call your custom commands/jobs
 
 **Example:**
 
-```- e2e-web/execute_e2e_tests:
+```
+- e2e-web/execute_e2e_tests:
           name: "test_e2e"
           requires: ["deploy_feature_env"]
           filters:
@@ -231,6 +237,7 @@ Do not forget to prefix your command with the name of your orb
 
 - Modify on your _conf.yml_ file your orb version with the real one pushed in master and published
 
-```orbs:
+```
+orbs:
   e2e-web: "jobteaser/e2e-web@0.11.0"
 ```
