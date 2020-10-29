@@ -1,4 +1,5 @@
 # Introduction
+
 This document describes the CI and CD pipelines for JobTeaser services, and
 explains how to use and maintain CircleCI orbs.
 
@@ -69,6 +70,7 @@ A new project must perform the following steps to use the CI/CD pipeline:
   deployment.
 
 ## Orbs
+
 CircleCI offers the possibility to write custom executors, commands and jobs
 and make them available in reusable packages called orbs. This mechanism
 allows us to define standard JobTeaser procedures, and make them available to
@@ -80,6 +82,7 @@ Each orb is stored in a subdirectory of the `orbs` top-level directory.
 information.**
 
 ### Versioning
+
 The CircleCI setup for this repository will validate all orbs and publish them
 using a development tag based on the git branch, making it easy to test
 orbs. The `dev:master` development version can be selected to use the very
@@ -99,12 +102,135 @@ or patch versions. As a rule of thumb:
 - bump the major version if you are making backward incompatible changes.
 
 ### Tests
+
 If you need to experiment with orbs, just create a branch and publish
 development versions based on this branch. In your project, you can then
 depend on `dev:<branch>`.
 
 ### Executors
+
 Executors defined in orbs are based on Dockerfiles stored in the orb
 directory, using the name of the executor as file extension. For example, the
 Dockerfile for the `deploy` executor of the `helm` orb is available at
 `orbs/helm/Dockerfile.deploy`.
+
+### Orbs creation
+
+#### **Prerequisites:**
+
+- Clone repo [https://github.com/jobteaser/circleci](https://github.com/jobteaser/circleci)
+- Install circleci cli: [https://circleci.com/docs/2.0/local-cli/](https://circleci.com/docs/2.0/local-cli/)
+
+List of orbs available in JT: [https://circleci.com/developer/orbs?query=jobteaser](https://circleci.com/developer/orbs?query=jobteaser)
+
+File used to illustrate in this doc: [https://github.com/jobteaser/circleci/blob/master/orbs/e2e-web/orb.yml](https://github.com/jobteaser/circleci/blob/master/orbs/e2e-web/orb.yml)
+
+#### **Guide**
+
+- On a branch, create a new folder on orbs repository with the name of your custom orb
+
+- Create a new file _orb.yml_ in your folder. This file will be your orb configuration file.
+
+**Example**: to create a new orb “e2e-web”, create folder “e2e-web” with your orb.yml file
+
+- In this _orb.yml_ file, define your needed commands, jobs, executor… You can also use parameters which will be used when you will call your orb.
+
+**Example:**
+
+```jobs:
+  execute_e2e_tests:
+    parameters:
+      tags:
+        type: string
+        default: "not @flaky and not @wip and not @browserstack and not @prod"
+      max_instances:
+        type: string
+        default: "30"
+      command:
+        description: "The command to run in e2e_jt_tests repo"
+        type: "string"
+        default: "npm run chrome"
+      e2e_cookie:
+        description: "The cookie to add to bypass rate limit"
+        type: "string"
+        default: $COOKIE_E2E
+    executor:
+      name: "default"
+      tags: << parameters.tags >>
+      max_instances: << parameters.max_instances >>
+    steps:
+      - service/configure_ssh
+      - clone_test_suite
+      - manage_dependencies
+      - create_report_folder
+      - run_e2e_test:
+          command: << parameters.command >>
+          e2e_cookie: << parameters.e2e_cookie >>
+      - generate_reporting
+      - slack_alerting
+```
+
+In this case, I have created a job, with parameters. Steps I used are also custom commands I have in my [_orb.yml_](https://github.com/jobteaser/circleci/blob/master/orbs/e2e-web/orb.yml) file
+
+When your file is configured, you have to create your orb in the repo. Open your terminal on your circleci repo and type:
+
+```circleci orb create jobteaser/orbName
+```
+
+_orbName_ has to be replaced with your orb name (ie your folder name)
+
+**Example:** circleci orb create jobteaser/e2e-web
+
+If you have: Error: AUTHORIZATION_FAILURE ask **devex** team to do it for you
+
+- To test your orb, you can publish it with a custom name to be used in your other repo which will call the orb.
+
+**Example:**
+
+```circleci orb publish orbs/<<orbName>>/orb.yml jobteaser/<<orbName>>@dev:orb_e2e_tests
+```
+
+Result:
+
+```Orb jobteaser/circleci@dev:orb_e2e_tests was published.
+Please note that this is an open orb and is world-readable.
+Note that your dev label `dev:orb_e2e_tests` can be overwritten by anyone in your organization.
+Your dev orb will expire in 90 days unless a new version is published on the label `dev:orb_e2e_tests`.
+
+```
+
+It will generate a temporary orb that can be overwritten if you republished, and will be deleted after 90 days if not published
+
+- Now your orb can be used in your other repo. On _conf.yml_ file of your other repo, import your orbs you just published:
+
+```orbs:
+  e2e-web: "jobteaser/e2e-web@dev:orb_e2e_tests"
+```
+
+You can now call your custom commands/jobs
+
+**Example:**
+
+```- e2e-web/execute_e2e_tests:
+          name: "test_e2e"
+          requires: ["deploy_feature_env"]
+          filters:
+            branches:
+              ignore:
+                - master
+          # Orb custom parameters:
+          tags: "not @legacy and not @flaky and not @pending and not @browserstack and not @prod"
+          max_instances: "30"
+          command: FEATURE_UI=$CIRCLE_SHA1 npm run chrome
+          e2e_cookie: $COOKIE_E2E
+```
+
+Do not forget to prefix your command with the name of your orb
+
+- Once you know your orb is correctly working, push your orb to master and tag master with a new version (check current tag and increment)
+
+- Modify on your _conf.yml_ file your orb version with the real one pushed in master and published
+
+```orbs:
+  e2e-web: "jobteaser/e2e-web@0.11.0"
+```
