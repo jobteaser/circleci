@@ -272,7 +272,7 @@ git push origin --tags
 This will trigger the deployment of a tagged version of your Orb on CircleCI:
 https://app.circleci.com/pipelines/github/jobteaser/circleci.
 
-When done, you can **modify your `.circleci/config.yml`** to use to final & versionned orb:
+When done, you can **modify your `.circleci/config.yml`** to use the final & versionned orb:
 ```
 orbs:
   e2e-web: "jobteaser/e2e-web@0.11.0"
@@ -285,7 +285,7 @@ how to name the Dockerfile.
 
 Dockerhub has a feature called autobuild that let's you configure hooks to have dockerhub build docker images when you push to a repository.
 
-If your docker image has no confidential information is stored in it, you can define it as being public (like circleci-helm-deploy).
+If your docker image has no confidential information stored in it, you can define it as being public (like circleci-helm-deploy).
 
 To create a dockerhub repository that will hold the built images, you must:
 1. go to: https://hub.docker.com/repository/create to create a "repository"
