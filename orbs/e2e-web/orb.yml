@@ -106,7 +106,7 @@ commands:
           include_project_field: false
           include_visit_job_action: false
           fail_only: true
-          failure_message: "E2E $CIRCLE_PROJECT_REPONAME build $CIRCLE_BUILD_NUM failed\n<$CIRCLE_BUILD_URL|See job>"
+          failure_message: "E2E Project: $CIRCLE_PROJECT_REPONAME\nBranch name: $CIRCLE_BRANCH\nBuild $CIRCLE_BUILD_NUM failed\n<$CIRCLE_BUILD_URL|See job>"
           webhook: ${SLACK_WEBHOOK}
 
 jobs:
