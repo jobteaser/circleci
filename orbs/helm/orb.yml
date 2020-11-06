@@ -256,12 +256,29 @@ jobs:
         description: "Whether to create a deployment Git tag or not."
         type: boolean
         default: false
+      prevent_parallel_deployments:
+        default: true
+        description:
+          Whether to wait for other deployment on master to finish
+
+          The default is to serialize deployments on the master branch.
+          You can allow parallel deployment by setting this parameter to
+          false.
+
+          Note that for branches other than master, you might consider
+          pipelines auto-cancellation instead of letting the build run
+          its full course.
+          https://circleci.com/docs/2.0/skip-build/#auto-cancelling-a-redundant-build
+        type: boolean
     executor: "deploy"
     steps:
-      - run:
-          name: "Wait for all other builds to complete"
-          command: |
-            circle-wait-job
+      - when:
+          condition: <<parameters.prevent_parallel_deployments>>
+          steps:
+            - run:
+                name: "Wait for all other builds to complete"
+                command: |
+                  circle-wait-job
       - checkout
       - run:
           name: "Ensure that this build is more recent than the last deployed one"
