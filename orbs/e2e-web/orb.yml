@@ -128,8 +128,8 @@ jobs:
   execute_e2e_tests:
     parameters:
       executorName:
-        type: string
-        default: "xlarge"
+        type: executor
+        default: xlarge
       tags:
         type: string
         default: "not @flaky and not @wip and not @browserstack and not @prod"
