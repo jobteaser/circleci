@@ -26,6 +26,16 @@ executors:
           CHROMEDRIVER_FILEPATH: /usr/local/bin/chromedriver
           FORCE_COLOR: "0"
           CUCUMBER_TAGS: << parameters.tags >>
+  browserstack:
+    parameters:
+      tags:
+        type: string
+        default: "@browserstack not @flaky and not @pending and not @prod"
+    docker:
+      - image: "circleci/openjdk:11-stretch-node"
+        environment:
+          DEBUG: "false"
+          CUCUMBER_TAGS: << parameters.tags >>
 
 commands:
   clone_test_suite:
@@ -117,6 +127,9 @@ commands:
 jobs:
   execute_e2e_tests:
     parameters:
+      executorName:
+        type: string
+        default: "default"
       tags:
         type: string
         default: "not @flaky and not @wip and not @browserstack and not @prod"
@@ -140,7 +153,7 @@ jobs:
         type: string
         default: "$CIRCLE_CI_HM_TOKEN"
     executor:
-      name: "default"
+      name: << parameters.executorName >>
       tags: << parameters.tags >>
       max_instances: << parameters.max_instances >>
     steps:
