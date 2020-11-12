@@ -154,7 +154,7 @@ jobs:
         type: string
         default: "$CIRCLE_CI_HM_TOKEN"
     executor:
-      name: "<< parameters.executorName >>"
+      name: << parameters.executorName >>
       tags: << parameters.tags >>
       max_instances: << parameters.max_instances >>
     steps:
