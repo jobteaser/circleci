@@ -7,7 +7,7 @@ orbs:
   service: "jobteaser/service@0.10.0"
 
 executors:
-  default:
+  xlarge:
     parameters:
       tags:
         type: string
@@ -129,7 +129,7 @@ jobs:
     parameters:
       executorName:
         type: string
-        default: "default"
+        default: "xlarge"
       tags:
         type: string
         default: "not @flaky and not @wip and not @browserstack and not @prod"
