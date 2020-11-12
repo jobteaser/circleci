@@ -40,11 +40,16 @@ executors:
 commands:
   clone_test_suite:
     description: "Clone test suite configuration"
+    parameters:
+      branch:
+        description: "Branch to clone"
+        type: "string"
+        default: "master"
     steps:
       - run:
           name: "clone the test suite"
           command: |
-            git clone git@github.com:jobteaser/e2e_jt_tests.git
+            git clone -b << parameters.branch >> git@github.com:jobteaser/e2e_jt_tests.git
 
   manage_dependencies:
     description: "Use cache management for dependencies or install fresh ones"
@@ -84,7 +89,7 @@ commands:
     steps:
       - run:
           working_directory: e2e_jt_tests
-          name: "run the test suite with chrome on staging"
+          name: "Run test suite on staging"
 #https://circleci.com/docs/2.0/configuration-reference/#default-shell-options
 # in case of failure, do not mark step as failed (experiment of e2e tests on this repo)
           command: |
@@ -131,6 +136,10 @@ jobs:
       e:
         type: executor
         default: "xlarge"
+      branch:
+        description: "Branch to clone"
+        type: "string"
+        default: "master"
       command:
         description: "The command to run in e2e_jt_tests repo"
         type: "string"
@@ -150,7 +159,8 @@ jobs:
     executor: "<< parameters.e >>"
     steps:
       - service/configure_ssh
-      - clone_test_suite
+      - clone_test_suite:
+          branch: << parameters.branch >>
       - manage_dependencies
       - create_report_folder
       - run_e2e_test:
