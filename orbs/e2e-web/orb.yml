@@ -144,6 +144,6 @@ jobs:
           command: << parameters.command >>
           e2e_cookie: << parameters.e2e_cookie >>
       - generate_reporting
-      - publish_results:
+      - slack_alerting:
           channel: << parameters.channel >>
           ciToken: << parameters.ciToken >>
