@@ -131,6 +131,14 @@ jobs:
         description: "The cookie to add to bypass rate limit"
         type: "string"
         default: $COOKIE_E2E
+      channel:
+        description: Channel slack notifications
+        type: string
+        default: "notif-e2e-master"
+      ciToken:
+        description: CircleCI Token
+        type: string
+        default: "$CIRCLE_CI_HM_TOKEN"
     executor:
       name: "default"
       tags: << parameters.tags >>
