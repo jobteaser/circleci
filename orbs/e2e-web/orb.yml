@@ -5,10 +5,9 @@ description: |
 
 orbs:
   service: "jobteaser/service@0.10.0"
-  slack: "circleci/slack@3.4.2"
 
 executors:
-  default:
+  xlarge:
     parameters:
       tags:
         type: string
@@ -26,6 +25,16 @@ executors:
           # rather than the one from package.json
           CHROMEDRIVER_FILEPATH: /usr/local/bin/chromedriver
           FORCE_COLOR: "0"
+          CUCUMBER_TAGS: << parameters.tags >>
+  browserstack:
+    parameters:
+      tags:
+        type: string
+        default: "@browserstack not @flaky and not @pending and not @prod"
+    docker:
+      - image: "circleci/openjdk:11-stretch-node"
+        environment:
+          DEBUG: "false"
           CUCUMBER_TAGS: << parameters.tags >>
 
 commands:
@@ -99,25 +108,28 @@ commands:
 
   slack_alerting:
     description: "Generate slack notification in case of failure"
+    parameters:
+      channel:
+        description: Channel slack notifications
+        type: string
+        default: "notif-e2e-master"
+      ciToken:
+        description: CircleCI Token
+        type: string
+        default: "$CIRCLE_CI_HM_TOKEN"
     steps:
-      - slack/status:
-          channel: "notif-e2e-master"
-          include_job_number_field: false
-          include_project_field: false
-          include_visit_job_action: false
-          fail_only: true
-          failure_message: "E2E Project: $CIRCLE_PROJECT_REPONAME\nBranch name: $CIRCLE_BRANCH\nBuild $CIRCLE_BUILD_NUM failed\n<$CIRCLE_BUILD_URL|See job>"
-          webhook: ${SLACK_WEBHOOK}
+      - run:
+          name: "Publish report"
+          command: |
+            npm run slackArtifactURL << parameters.channel >> << parameters.ciToken >>
+          when: always
 
 jobs:
   execute_e2e_tests:
     parameters:
-      tags:
-        type: string
-        default: "not @flaky and not @wip and not @browserstack and not @prod"
-      max_instances:
-        type: string
-        default: "30"
+      e:
+        type: executor
+        default: "xlarge"
       command:
         description: "The command to run in e2e_jt_tests repo"
         type: "string"
@@ -126,10 +138,15 @@ jobs:
         description: "The cookie to add to bypass rate limit"
         type: "string"
         default: $COOKIE_E2E
-    executor:
-      name: "default"
-      tags: << parameters.tags >>
-      max_instances: << parameters.max_instances >>
+      channel:
+        description: Channel slack notifications
+        type: string
+        default: "notif-e2e-master"
+      ciToken:
+        description: CircleCI Token
+        type: string
+        default: "$CIRCLE_CI_HM_TOKEN"
+    executor: "<< parameters.e >>"
     steps:
       - service/configure_ssh
       - clone_test_suite
@@ -139,4 +156,6 @@ jobs:
           command: << parameters.command >>
           e2e_cookie: << parameters.e2e_cookie >>
       - generate_reporting
-      - slack_alerting
+      - slack_alerting:
+          channel: << parameters.channel >>
+          ciToken: << parameters.ciToken >>
