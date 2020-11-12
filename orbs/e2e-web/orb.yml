@@ -5,7 +5,6 @@ description: |
 
 orbs:
   service: "jobteaser/service@0.10.0"
-  slack: "circleci/slack@3.4.2"
 
 executors:
   default:
@@ -99,15 +98,21 @@ commands:
 
   slack_alerting:
     description: "Generate slack notification in case of failure"
+    parameters:
+      channel:
+        description: Channel slack notifications
+        type: string
+        default: "notif-e2e-master"
+      ciToken:
+        description: CircleCI Token
+        type: string
+        default: "$CIRCLE_CI_HM_TOKEN"
     steps:
-      - slack/status:
-          channel: "notif-e2e-master"
-          include_job_number_field: false
-          include_project_field: false
-          include_visit_job_action: false
-          fail_only: true
-          failure_message: "E2E Project: $CIRCLE_PROJECT_REPONAME\nBranch name: $CIRCLE_BRANCH\nBuild $CIRCLE_BUILD_NUM failed\n<$CIRCLE_BUILD_URL|See job>"
-          webhook: ${SLACK_WEBHOOK}
+      - run:
+          name: "Publish report"
+          command: |
+            npm run slackArtifactURL << parameters.channel >> << parameters.ciToken >>
+          when: always
 
 jobs:
   execute_e2e_tests:
@@ -139,4 +144,6 @@ jobs:
           command: << parameters.command >>
           e2e_cookie: << parameters.e2e_cookie >>
       - generate_reporting
-      - slack_alerting
+      - publish_results:
+          channel: << parameters.channel >>
+          ciToken: << parameters.ciToken >>
