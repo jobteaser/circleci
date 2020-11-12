@@ -129,7 +129,7 @@ jobs:
     parameters:
       executorName:
         description: "The executor to use for the job."
-        type: "executor"
+        type: string
         default: "xlarge"
       tags:
         type: string
@@ -153,8 +153,8 @@ jobs:
         description: CircleCI Token
         type: string
         default: "$CIRCLE_CI_HM_TOKEN"
-    executor: 
-      name: << parameters.executorName >>
+    executor:
+      name: "<< parameters.executorName >>"
       tags: << parameters.tags >>
       max_instances: << parameters.max_instances >>
     steps:
