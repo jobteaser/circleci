@@ -153,7 +153,10 @@ jobs:
         description: CircleCI Token
         type: string
         default: "$CIRCLE_CI_HM_TOKEN"
-    executor: {name: "<< parameters.executorName >>", tags: << parameters.tags >>, max_instances: << parameters.max_instances >>}
+    executor: 
+      name: << parameters.executorName >>
+      tags: << parameters.tags >>
+      max_instances: << parameters.max_instances >>
     steps:
       - service/configure_ssh
       - clone_test_suite
