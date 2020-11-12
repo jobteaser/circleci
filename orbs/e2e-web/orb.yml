@@ -127,15 +127,6 @@ commands:
 jobs:
   execute_e2e_tests:
     parameters:
-      executorName:
-        type: string
-        default: xlarge
-      tags:
-        type: string
-        default: "not @flaky and not @wip and not @browserstack and not @prod"
-      max_instances:
-        type: string
-        default: "30"
       command:
         description: "The command to run in e2e_jt_tests repo"
         type: "string"
@@ -152,10 +143,6 @@ jobs:
         description: CircleCI Token
         type: string
         default: "$CIRCLE_CI_HM_TOKEN"
-    executor:
-      name: << parameters.executorName >>
-      tags: << parameters.tags >>
-      max_instances: << parameters.max_instances >>
     steps:
       - service/configure_ssh
       - clone_test_suite
