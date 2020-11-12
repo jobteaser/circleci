@@ -120,6 +120,7 @@ commands:
     steps:
       - run:
           name: "Publish report"
+          working_directory: e2e_jt_tests
           command: |
             npm run slackArtifactURL << parameters.channel >> << parameters.ciToken >>
           when: always
