@@ -128,7 +128,7 @@ jobs:
   execute_e2e_tests:
     parameters:
       executorName:
-        type: executor
+        type: string
         default: xlarge
       tags:
         type: string
