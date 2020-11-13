@@ -133,7 +133,7 @@ commands:
 jobs:
   execute_e2e_tests:
     parameters:
-      e:
+      executor:
         type: executor
         default: "xlarge"
       branch:
@@ -156,7 +156,7 @@ jobs:
         description: CircleCI Token
         type: string
         default: "$CIRCLE_CI_HM_TOKEN"
-    executor: "<< parameters.e >>"
+    executor: "<< parameters.executor >>"
     steps:
       - service/configure_ssh
       - clone_test_suite:
