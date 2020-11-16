@@ -9,9 +9,6 @@ orbs:
 executors:
   xlarge:
     parameters:
-      tags:
-        type: string
-        default: "not @flaky and not @pending and not @browserstack and not @prod"
       max_instances:
         type: string
         default: "30"
@@ -25,17 +22,11 @@ executors:
           # rather than the one from package.json
           CHROMEDRIVER_FILEPATH: /usr/local/bin/chromedriver
           FORCE_COLOR: "0"
-          CUCUMBER_TAGS: << parameters.tags >>
   browserstack:
-    parameters:
-      tags:
-        type: string
-        default: "@browserstack not @flaky and not @pending and not @prod"
     docker:
       - image: "circleci/openjdk:11-stretch-node"
         environment:
           DEBUG: "false"
-          CUCUMBER_TAGS: << parameters.tags >>
 
 commands:
   clone_test_suite:
@@ -78,6 +69,9 @@ commands:
 
   run_e2e_test:
     parameters:
+      tags:
+        type: string
+        default: "not @flaky and not @pending and not @browserstack and not @prod"
       command:
         description: "The command to run in e2e_jt_tests repo"
         type: "string"
@@ -86,15 +80,29 @@ commands:
         description: "The cookie to add to bypass rate limit"
         type: "string"
         default: $COOKIE_E2E
+      find_tags_script_path:
+        type: string
+        default: script/find_correct_tests_ui_jobteaser.sh
     steps:
       - run:
-          working_directory: e2e_jt_tests
-          name: "Run test suite on staging"
-#https://circleci.com/docs/2.0/configuration-reference/#default-shell-options
-# in case of failure, do not mark step as failed (experiment of e2e tests on this repo)
+          name: "Find tags to run, halt if no tags matched or run tests"
           command: |
+            if [ "$CIRCLE_PROJECT_REPONAME" = 'ui-jobteaser' ]; then
+              git clone -b $CIRCLE_BRANCH git@github.com:jobteaser/$CIRCLE_PROJECT_REPONAME.git
+              cd ${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}/$CIRCLE_PROJECT_REPONAME/
+              TAGS=$(./<< parameters.find_tags_script_path >> | tail -1 | sed 's/^.*Final tags result is: \(.*\)$/\1/')
+            else
+              TAGS="<< parameters.tags >>"
+            fi
+            if [ "$TAGS" = '' ]; then
+                echo "No tests to run for this commit"
+                circleci-agent step halt
+                exit 0
+            fi
             export BYPASS_RACK_ATTACK=<< parameters.e2e_cookie >>
-            << parameters.command >>
+            cd ${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}/e2e_jt_tests/
+            echo "Tags to run: $TAGS"
+            CUCUMBER_TAGS=$TAGS << parameters.command >>
 
   generate_reporting:
     description: "generate reports"
@@ -133,6 +141,12 @@ commands:
 jobs:
   execute_e2e_tests:
     parameters:
+      tags:
+        type: string
+        default: "not @flaky and not @pending and not @browserstack and not @prod"
+      find_tags_script_path:
+        type: string
+        default: "script/find_correct_tests_ui_jobteaser.sh"
       executor_type:
         type: executor
         default: "xlarge"
@@ -166,6 +180,8 @@ jobs:
       - run_e2e_test:
           command: << parameters.command >>
           e2e_cookie: << parameters.e2e_cookie >>
+          tags: << parameters.tags >>
+          find_tags_script_path: << parameters.find_tags_script_path >>
       - generate_reporting
       - slack_alerting:
           channel: << parameters.channel >>
