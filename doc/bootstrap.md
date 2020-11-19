@@ -51,10 +51,14 @@ orb](https://github.com/jobteaser/circleci/blob/master/orbs/helm/orb.yml)
 which requires write permission to create a Git tag.
 
 You can configure a SSH key with write permission as follows:
-1. On the "project settings > Checkout SSH keys" page, click the
+1. Connect to GitHub with circleci-jt user [(You should have given push access on your repo to 
+   circleci-jt)](https://github.com/jobteaser/service/blob/master/doc/bootstrap.md#repository).
+   Credentials are in BitWarden with the name 'GitHub user key for CircleCI'.
+2. Then, use this GitHub session to connect to CircleCI
+3. Go to your project. Then, on the "project settings > Checkout SSH keys" page, click the
    "Authorize with Github" button. This gives CircleCI permission to
    create and upload SSH keys to Github.
-2. Click the "Create and add XXX user key" button.
+4. Click the "Create and add XXX user key" button.
 
 Now CircleCI will use the SSH key with read and write permissions.
 
