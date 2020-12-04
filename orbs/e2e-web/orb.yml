@@ -14,7 +14,7 @@ executors:
         default: "30"
     resource_class: "xlarge"
     docker:
-      - image: "circleci/openjdk:11.0.8-buster-node-browsers"
+      - image: "circleci/node:12.19.1-browsers"
         environment:
           DEBUG: "false"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
