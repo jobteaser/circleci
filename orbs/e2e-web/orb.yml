@@ -80,6 +80,10 @@ commands:
         description: "The cookie to add to bypass rate limit"
         type: "string"
         default: $COOKIE_E2E
+      no_rl_cloudflare_cookie:
+        description: "The cookie to add to bypass rate limit of CloudFlare"
+        type: "string"
+        default: $NO_RL_CLOUDFLARE
       find_tags_script_path:
         type: string
         default: script/find_correct_tests_ui_jobteaser.sh
@@ -100,6 +104,7 @@ commands:
                 exit 0
             fi
             export BYPASS_RACK_ATTACK=<< parameters.e2e_cookie >>
+            export NO_RL_CLOUDFLARE=<< parameters.no_rl_cloudflare_cookie >>
             cd ${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}/e2e_jt_tests/
             echo "Tags to run: $TAGS"
             CUCUMBER_TAGS=$TAGS << parameters.command >>
@@ -162,6 +167,10 @@ jobs:
         description: "The cookie to add to bypass rate limit"
         type: "string"
         default: $COOKIE_E2E
+      no_rl_cloudflare_cookie:
+        description: "The cookie to add to bypass rate limit of Cloudflare"
+        type: "string"
+        default: $NO_RL_CLOUDFLARE
       channel:
         description: Channel slack notifications
         type: string
@@ -180,6 +189,7 @@ jobs:
       - run_e2e_test:
           command: << parameters.command >>
           e2e_cookie: << parameters.e2e_cookie >>
+          no_rl_cloudflare_cookie: << parameters.no_rl_cloudflare_cookie >>
           tags: << parameters.tags >>
           find_tags_script_path: << parameters.find_tags_script_path >>
       - generate_reporting
