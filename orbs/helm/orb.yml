@@ -12,49 +12,6 @@ executors:
           password: "$DOCKER_PASSWORD"
 
 commands:
-  create_signalfx_event:
-    description: "Create SignalFx event"
-    parameters:
-      service_name:
-        description: "The service name."
-        type: "string"
-        default: "$CIRCLE_PROJECT_REPONAME"
-      environment:
-        description: "The runtime environment."
-        type: "string"
-        default: "prod"
-      signalfx_endpoint:
-        description: "The signalfx api endpoint."
-        type: "string"
-        default: "https://$SIGNALFX_ENDPOINT/v2/event"
-      signalfx_access_token:
-        description: "The signalfx access token."
-        type: "string"
-        default: "$SIGNALFX_ACCESS_TOKEN"
-      event_category:
-        description: ""
-        type: "enum"
-        enum: ["USER_DEFINED", "ALERT", "AUDIT", "JOB", "COLLECTED", "SERVICE_DISCOVERY", "EXCEPTION"]
-        default: "USER_DEFINED"
-      event_name:
-        description: "The event name."
-        type: "string"
-    steps:
-      - run:
-          name: "Create SignalFx event"
-          command: |
-            dimensions=$(jo environment="<<parameters.environment>>" app="<<parameters.service_name>>" git-sha1="$CIRCLE_SHA1")
-            properties=$(jo git-sha1="$CIRCLE_SHA1")
-            event=$(jo category="<<parameters.event_category>>" eventType="<<parameters.event_name>>" dimensions="$dimensions" properties="$properties")
-            events=$(jo -a "$event")
-
-            curl \
-              -X POST \
-              -H "Content-Type: application/json" \
-              -H "X-SF-Token: <<parameters.signalfx_access_token>>" \
-              -d "$events" \
-              <<parameters.signalfx_endpoint>>
-
   configure_kubernetes_client:
     description: "Configure the kubernetes client."
     parameters:
@@ -307,9 +264,6 @@ jobs:
           helm_chart_path: "<<parameters.helm_chart_path>>"
           helm_release_name: "<<parameters.helm_release_name>>"
           helm_value_file_path: "<<parameters.helm_value_file_path>>"
-      - create_signalfx_event:
-          environment: "<<parameters.environment>>"
-          event_name: "deployment started"
       - run:
           name: "Install or upgrade the Helm release"
           command: |
@@ -328,6 +282,3 @@ jobs:
           steps:
             - tag_deployment:
                 environment: "<<parameters.environment>>"
-      - create_signalfx_event:
-          environment: "<<parameters.environment>>"
-          event_name: "deployment ended"
