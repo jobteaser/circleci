@@ -150,6 +150,7 @@ jobs:
             cd <<parameters.helm_chart_path>>
             helm init --client-only --stable-repo-url https://charts.helm.sh/stable
             helm plugin install https://github.com/chartmuseum/helm-push
+            helm repo add stable https://charts.helm.sh/stable
             helm repo add --username <<parameters.helm_repo_user>> --password <<parameters.helm_repo_pass>> jobteaser-private <<parameters.helm_repo_url>>
             helm repo add jobteaser-public https://jobteaser.github.io/charts
             helm repo update
@@ -251,6 +252,7 @@ jobs:
           command: |
             cd <<parameters.helm_chart_path>>
             helm init --client-only --stable-repo-url https://charts.helm.sh/stable
+            helm repo add stable https://charts.helm.sh/stable
             helm repo add jobteaser https://jobteaser.github.io/charts
             helm dep update
       - when:
