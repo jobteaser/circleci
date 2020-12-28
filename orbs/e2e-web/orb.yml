@@ -22,6 +22,50 @@ executors:
           # rather than the one from package.json
           CHROMEDRIVER_FILEPATH: /usr/local/bin/chromedriver
           FORCE_COLOR: "0"
+  large:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    resource_class: "large"
+    docker:
+      - image: "circleci/node:12.19.1-browsers"
+        environment:
+          DEBUG: "false"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          # ensure we use the chromedriver embedded in the docker image
+          # rather than the one from package.json
+          CHROMEDRIVER_FILEPATH: /usr/local/bin/chromedriver
+          FORCE_COLOR: "0"
+  medium:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    docker:
+      - image: "circleci/node:12.19.1-browsers"
+        environment:
+          DEBUG: "false"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          # ensure we use the chromedriver embedded in the docker image
+          # rather than the one from package.json
+          CHROMEDRIVER_FILEPATH: /usr/local/bin/chromedriver
+          FORCE_COLOR: "0"
+  small:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    resource_class: "small"
+    docker:
+      - image: "circleci/node:12.19.1-browsers"
+        environment:
+          DEBUG: "false"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          # ensure we use the chromedriver embedded in the docker image
+          # rather than the one from package.json
+          CHROMEDRIVER_FILEPATH: /usr/local/bin/chromedriver
+          FORCE_COLOR: "0"
   browserstack:
     docker:
       - image: "circleci/openjdk:11-stretch-node"
