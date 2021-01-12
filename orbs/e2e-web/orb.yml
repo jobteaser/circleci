@@ -135,8 +135,10 @@ commands:
       - run:
           name: "Find tags to run, halt if no tags matched or run tests"
           command: |
-            if [ "$CIRCLE_PROJECT_REPONAME" = 'ui-jobteaser' ]; then
-              git clone -b $CIRCLE_BRANCH git@github.com:jobteaser/$CIRCLE_PROJECT_REPONAME.git
+            if [ ! -z "<< parameters.find_tags_script_path >>" ]; then
+              if [ ! "$CIRCLE_PROJECT_REPONAME" = 'e2e_jt_tests' ]; then
+                git clone -b $CIRCLE_BRANCH git@github.com:jobteaser/$CIRCLE_PROJECT_REPONAME.git
+              fi
               cd ${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}/$CIRCLE_PROJECT_REPONAME/
               TAGS=$(./<< parameters.find_tags_script_path >> | tail -1 | sed 's/^.*Final tags result is: \(.*\)$/\1/')
             else
@@ -192,10 +194,10 @@ jobs:
     parameters:
       tags:
         type: string
-        default: "not @flaky and not @pending and not @browserstack and not @prod"
+        default: "not @pending and not @browserstack and not @prod"
       find_tags_script_path:
         type: string
-        default: "script/find_correct_tests_ui_jobteaser.sh"
+        default: ""
       executor_type:
         type: executor
         default: "xlarge"
