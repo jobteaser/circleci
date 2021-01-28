@@ -263,6 +263,21 @@ jobs:
           helm_release_name: "<<parameters.helm_release_name>>"
           helm_value_file_path: "<<parameters.helm_value_file_path>>"
       - run:
+          name: "Diff Helm release"
+          command: |
+            helm diff upgrade \
+              --namespace=<<parameters.kubernetes_namespace>> \
+              -f <<parameters.helm_value_file_path>> \
+              --set=circleci.sha1=$CIRCLE_SHA1 \
+              --set=circleci.branch=$CIRCLE_BRANCH \
+              --set=image=<<parameters.docker_image>>:<<parameters.docker_tag>> \
+              --install <<parameters.helm_release_name>> <<parameters.helm_chart_path>> \
+      - when:
+          condition: <<parameters.tag_deployment>>
+          steps:
+            - tag_deployment:
+                environment: "<<parameters.environment>>"
+      - run:
           name: "Install or upgrade the Helm release"
           command: |
             helm upgrade \
@@ -274,7 +289,6 @@ jobs:
               --wait=<<parameters.helm_wait_for_ready>> \
               --timeout=<<parameters.helm_upgrade_timeout>>s \
               --install <<parameters.helm_release_name>> <<parameters.helm_chart_path>> \
-              --dry-run
       - when:
           condition: <<parameters.tag_deployment>>
           steps:
