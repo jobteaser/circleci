@@ -205,6 +205,10 @@ jobs:
         description: "The path of the extra value file to apply."
         type: string
         default: "./k8s/$CIRCLE_PROJECT_REPONAME/$HELM_VALUE_FILE_NAME"
+      no_output_timeout:
+        description: "The amount of time CircleCI waits for before killing the job if it gives no output"
+        type: string
+        default: "15m"
       check_helm_chart:
         description: "Whether to check the Helm configuration or not."
         type: boolean
@@ -266,6 +270,7 @@ jobs:
           helm_value_file_path: "<<parameters.helm_value_file_path>>"
       - run:
           name: "Install or upgrade the Helm release"
+          no_output_timeout: <<parameters.no_output_timeout>>
           command: |
             helm upgrade \
               --tiller-namespace=<<parameters.kubernetes_namespace>> \
