@@ -16,11 +16,12 @@ RUN apt-get update -y && \
       docker.io \
       # trivy (note that it also uses git at runtime)
       apt-transport-https gnupg \
+      lsb-release \
     && \
     rm -rf /var/lib/apt/lists/* && \
     ( \
       wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add - && \
-      echo "deb https://aquasecurity.github.io/trivy-repo/deb bionic main" >>/etc/apt/sources.list.d/trivy.list && \
+      echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" >>/etc/apt/sources.list.d/trivy.list && \
       apt-get update -y && \
       apt-get install -y trivy && \
       rm -rf /var/lib/apt/lists/* \
