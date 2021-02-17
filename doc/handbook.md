@@ -63,7 +63,7 @@ A new project must perform the following steps to use the CI/CD pipeline:
         curl -sSL https://raw.githubusercontent.com/jobteaser/circleci/master/utils/configure-project \
             | sh -s -- -t <circleci-token> <service-name>
 
-- If your Kubernetes setup mounts any secret, make sure these are created
+- If your Kubernetes setup use Vault secrets, make sure these are created
   manually before the first deployment.
 - Commit and push your branch. This will trigger the first build.
 - Merge the branch in `master`. This will trigger a build and the first
