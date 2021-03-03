@@ -128,20 +128,23 @@ commands:
         description: "The cookie to add to bypass rate limit of CloudFlare"
         type: "string"
         default: $NO_RL_CLOUDFLARE
-      find_tags_script_path:
+      find_suites_tags_script_path:
         type: string
         default: script/find_correct_tests_ui_jobteaser.sh
     steps:
       - run:
           name: "Find tags to run, halt if no tags matched or run tests"
           command: |
-            if [ ! -z "<< parameters.find_tags_script_path >>" ]; then
+            if [ ! -z "<< parameters.find_suites_tags_script_path >>" ]; then
               if [ ! "$CIRCLE_PROJECT_REPONAME" = 'e2e_jt_tests' ]; then
                 git clone -b $CIRCLE_BRANCH git@github.com:jobteaser/$CIRCLE_PROJECT_REPONAME.git
               fi
               cd ${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}/$CIRCLE_PROJECT_REPONAME/
-              TAGS=$(./<< parameters.find_tags_script_path >> | tail -1 | sed 's/^.*Final tags result is: \(.*\)$/\1/')
+              ./<< parameters.find_suites_tags_script_path >>
+              SUITES=$(cat SELECTED_SUITES)
+              TAGS=$(cat SELECTED_TAGS)
             else
+              SUITES=''
               TAGS="<< parameters.tags >>"
             fi
             if [ "$TAGS" = '' ]; then
@@ -153,7 +156,7 @@ commands:
             export NO_RL_CLOUDFLARE=<< parameters.no_rl_cloudflare_cookie >>
             cd ${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}/e2e_jt_tests/
             echo "Tags to run: $TAGS"
-            CUCUMBER_TAGS=$TAGS << parameters.command >>
+            CUCUMBER_TAGS=$TAGS << parameters.command >> $SUITES
 
   generate_reporting:
     description: "generate reports"
@@ -195,7 +198,7 @@ jobs:
       tags:
         type: string
         default: "not @pending and not @browserstack and not @prod"
-      find_tags_script_path:
+      find_suites_tags_script_path:
         type: string
         default: ""
       executor_type:
@@ -237,7 +240,7 @@ jobs:
           e2e_cookie: << parameters.e2e_cookie >>
           no_rl_cloudflare_cookie: << parameters.no_rl_cloudflare_cookie >>
           tags: << parameters.tags >>
-          find_tags_script_path: << parameters.find_tags_script_path >>
+          find_suites_tags_script_path: << parameters.find_suites_tags_script_path >>
       - generate_reporting
       - slack_alerting:
           channel: << parameters.channel >>
