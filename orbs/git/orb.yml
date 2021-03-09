@@ -1,0 +1,71 @@
+---
+version: 2.1
+
+description: |
+  Alternate checkout command to that provided by CircleCI
+
+  CircleCI's `checkout` command has two major issues [[1][1],[2][2]]:
+  - it does shallow clones: you get the latest state of
+    your repository, but don't really get any history;
+  - it messes with branch references;
+
+  Those are not an issue, until your CI workflow has reasons
+  to switch branches or look at the code's history.
+
+  If you do any of those things, you can use this alternate
+  `custom_checkout` command.
+
+  Of course, if CircleCI does things the way it does, is for
+  performance reasons. With time this command may become
+  slower than the original one, on especially large
+  repositories.
+
+  [1]: https://discuss.circleci.com/t/the-checkout-step-mangles-branches-messes-the-history/24975
+  [2]: https://discuss.circleci.com/t/git-checkout-of-a-branch-destroys-local-reference-to-master/23781
+
+commands:
+  custom_checkout:
+    steps:
+    - run:
+        name: "Custom checkout"
+        command: |
+          set -e
+
+          if [ "${HOME}" = "/" ]
+          then
+            export HOME=$(getent passwd $(id -un) | cut -d: -f6)
+          fi
+
+          mkdir -p ~/.ssh
+
+          # yamllint disable-line rule:line-length
+          echo 'github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==' >> ~/.ssh/known_hosts
+          # yamllint disable-line rule:line-length
+          echo 'bitbucket.org ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAubiN81eDcafrgMeLzaFPsw2kNvEcqTKl/VqLat/MaB33pZy0y3rJZtnqwR2qOOvbwKZYKiEO1O6VqNEBxKvJJelCq0dTXWT5pbO2gDXC6h6QDXCaHo6pOHGPUy+YBaGQRGuSusMEASYiWunYN0vCAI8QaXnWMXNMdFP3jHAJH0eDsoiGnLPBlBp4TNm6rYI74nMzgz3B9IikW4WVK+dc8KZJZWYjAuORU3jc1c/NPskD2ASinf8v3xnfXeukU0sJ5N6m5E8VLjObPEO+mN2t/FZTMZLiFqPWc/ALSqnMnnhwrNi2rbfg/rd/IpL8Le3pSBne8+seeFVBoGqzHM9yXw==' >> ~/.ssh/known_hosts
+
+          (umask 077; touch ~/.ssh/id_rsa)
+          chmod 0600 ~/.ssh/id_rsa
+          (cat \<<EOF > ~/.ssh/id_rsa
+          $CHECKOUT_KEY
+          EOF
+          )
+
+          # use git+ssh instead of https
+          git config --global url."ssh://git@github.com".insteadOf "https://github.com" || true
+          git config --global gc.auto 0 || true
+
+          if [ -e ~/project/.git ]
+          then
+            cd ~/project
+            git remote set-url origin "$CIRCLE_REPOSITORY_URL" || true
+          else
+            mkdir -p ~/project
+            cd ~/project
+            git clone -q "$CIRCLE_REPOSITORY_URL" .
+          fi
+          # Add -t to fetch tags, in case "${CIRCLE_BRANCH}" is a tag, not a branch
+          git fetch --force -t origin
+          git checkout "${CIRCLE_BRANCH}"
+
+
+# vim: et:sw=2:syntax=yaml:ts=2:
