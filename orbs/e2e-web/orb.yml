@@ -14,7 +14,7 @@ executors:
         default: "30"
     resource_class: "xlarge"
     docker:
-      - image: "circleci/node:12.19.1-browsers"
+      - image: "circleci/node:12-browsers"
         environment:
           DEBUG: "false"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -29,7 +29,7 @@ executors:
         default: "30"
     resource_class: "large"
     docker:
-      - image: "circleci/node:12.19.1-browsers"
+      - image: "circleci/node:12-browsers"
         environment:
           DEBUG: "false"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -43,7 +43,7 @@ executors:
         type: string
         default: "30"
     docker:
-      - image: "circleci/node:12.19.1-browsers"
+      - image: "circleci/node:12-browsers"
         environment:
           DEBUG: "false"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -58,7 +58,7 @@ executors:
         default: "30"
     resource_class: "small"
     docker:
-      - image: "circleci/node:12.19.1-browsers"
+      - image: "circleci/node:12-browsers"
         environment:
           DEBUG: "false"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
