@@ -9,11 +9,19 @@ orbs:
 
 executors:
   ci:
+    # We should avoid using latest image tag.
+    # Prefer using specific tag to avoid breaking your CI when a breaking change in the image occurs.
     docker:
-      - image: "jobteaser/rb-service-ci:latest"
+      - image: "jobteaser/rb-service-ci:<<parameters.tag>>"
         auth:
           username: "$DOCKER_LOGIN"
           password: "$DOCKER_PASSWORD"
+    parameters:
+      tag:
+        default: 'latest'
+        description: >
+          Pick a specific jobteaser/rb-service-ci image version tag
+        type: string
 
 commands:
   save_ruby_bundle_cache:
