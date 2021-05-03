@@ -81,6 +81,10 @@ commands:
         description: "The tag of the image."
         type: string
         default: "git-$CIRCLE_SHA1"
+      timeout:
+        description: "The timeout used by trivy"
+        type: string
+        default: "5m"
     steps:
       - run:
           name: "Check the image with trivy"
@@ -89,6 +93,7 @@ commands:
               --no-progress \
               -f json \
               -o /tmp/trivy.json \
+              --timeout <<parameters.timeout>> \
               <<parameters.image_name>>:<<parameters.image_tag>>
       - store_artifacts:
           path: "/tmp/trivy.json"
