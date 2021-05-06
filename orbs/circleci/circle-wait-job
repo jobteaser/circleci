@@ -85,7 +85,7 @@ rescue ArgumentError => e
   exit(1)
 end
 
-uri = URI::HTTPS.build(host: "circleci.com",
+uri_for_running = URI::HTTPS.build(host: "circleci.com",
                        path: File.join("/",
                                        "api",
                                        "v1.1",
@@ -99,10 +99,24 @@ uri = URI::HTTPS.build(host: "circleci.com",
                                                    "shallow" => true,
                                                    "filter" => "running"}))
 
+uri_for_successful = URI::HTTPS.build(host: "circleci.com",
+                       path: File.join("/",
+                                       "api",
+                                       "v1.1",
+                                       "project",
+                                       options.vcs.to_s,
+                                       options.organization.to_s,
+                                       options.project.to_s,
+                                       "tree",
+                                       options.branch.to_s),
+                       query: URI.encode_www_form({"circle-token" => options.token.to_s,
+                                                   "shallow" => true,
+                                                   "filter" => "successful"}))
 
-def other_job_is_running?(uri, targeted_job, current_job, current_build_num)
-  response = Net::HTTP.get(uri)
-  builds = JSON.parse(response)
+
+def other_job_is_running?(uri_for_running, uri_for_successful, targeted_job, current_job, current_build_num)
+  response = Net::HTTP.get(uri_for_running)
+  running_builds = JSON.parse(response)
 
   # Check if another targeted job (most likely a production deployment job) is already running.
   has_concurrent_job = builds.any? do |build|
@@ -135,24 +149,46 @@ def other_job_is_running?(uri, targeted_job, current_job, current_build_num)
 
     # Find build for the oldest code
     oldestBuild = concurrent_builds_for_current_job.min do |build1, build2|
-      DateTime.parse(build1.dig("committer_date")) <=> DateTime.parse(build2.dig("committer_date"))
+      DateTime.parse(build1["committer_date"]) <=> DateTime.parse(build2["committer_date"])
     end
 
     puts "Oldest build is #{oldestBuild["build_num"]}"
 
-    if current_build_num == oldestBuild["build_num"]
-      puts "\nCurrent build has the oldest code, it can continue running"
-      return false
-    else
+    if current_build_num != oldestBuild["build_num"]
       puts "\nCurrent build has code more recent that another one running, it must wait"
       return true
+    end
+
+    puts "\nCurrent build has the oldest code, it can continue running"
+
+    # There is generally around 4 seconds between a job being successful and the following job being running.
+    # It means it is possible that an older job similar to the current job just successful and that
+    # the associate targeted job has not started yet.
+    # In this case, two target jobs would run concurrently.
+    # To avoid this edge case, we ensure that no jobs similar to the current job successful a few seconds ago.
+    response = Net::HTTP.get(uri_for_successful)
+    successful_builds = JSON.parse(response)
+    few_seconds_ago = Time.now - 30 # observed latency are up to 10 seconds.
+
+    puts "\nChecking if a build has successfully runned #{current_job} few seconds ago..."
+    may_have_concurrent_job = successful_builds.any? do |build|
+      build.dig("workflows", "job_name").to_s == current_job && DateTime.parse(build["stop_time"]) > few_seconds_ago
+    end
+
+    if may_have_concurrent_job
+      puts "A build has successfully runned #{current_job} few seconds ago."
+      puts "Another build may start #{targeted_job} in few seconds."
+      return true
+    else
+      puts "No builds successfully runned job #{current_job} few seconds ago."
+      return false
     end
   end
 end
 
 puts("Check no other #{options.job} for #{options.branch} branch is running.")
 
-while other_job_is_running?(uri, options.job.to_s, options.current_job.to_s, options.build_number.to_i) do
+while other_job_is_running?(uri_for_running, uri_for_successful, options.job.to_s, options.current_job.to_s, options.build_number.to_i) do
   puts("Another #{options.job} for #{options.branch} branch already running, check again in #{options.interval} seconds.\n")
   sleep(options.interval.to_i)
 end
