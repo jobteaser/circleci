@@ -76,44 +76,6 @@ class CLI
   end
 end
 
-cli = CLI.new
-
-begin
-  options = cli.parse(ARGV)
-rescue ArgumentError => e
-  puts(e.message)
-  exit(1)
-end
-
-uri_for_running = URI::HTTPS.build(host: "circleci.com",
-                       path: File.join("/",
-                                       "api",
-                                       "v1.1",
-                                       "project",
-                                       options.vcs.to_s,
-                                       options.organization.to_s,
-                                       options.project.to_s,
-                                       "tree",
-                                       options.branch.to_s),
-                       query: URI.encode_www_form({"circle-token" => options.token.to_s,
-                                                   "shallow" => true,
-                                                   "filter" => "running"}))
-
-uri_for_successful = URI::HTTPS.build(host: "circleci.com",
-                       path: File.join("/",
-                                       "api",
-                                       "v1.1",
-                                       "project",
-                                       options.vcs.to_s,
-                                       options.organization.to_s,
-                                       options.project.to_s,
-                                       "tree",
-                                       options.branch.to_s),
-                       query: URI.encode_www_form({"circle-token" => options.token.to_s,
-                                                   "shallow" => true,
-                                                   "filter" => "successful"}))
-
-
 def other_job_is_running?(uri_for_running, uri_for_successful, targeted_job, current_job, current_build_num)
   response = Net::HTTP.get(uri_for_running)
   running_builds = JSON.parse(response)
@@ -162,10 +124,10 @@ def other_job_is_running?(uri_for_running, uri_for_successful, targeted_job, cur
     puts "\nCurrent build has the oldest code, it can continue running"
 
     # There is generally around 4 seconds between a job being successful and the following job being running.
-    # It means it is possible that an older job similar to the current job just successful and that
+    # It means it is possible that an older job, similar to the current job, just succeeded and that
     # the associate targeted job has not started yet.
     # In this case, two target jobs would run concurrently.
-    # To avoid this edge case, we ensure that no jobs similar to the current job successful a few seconds ago.
+    # To avoid this edge case, we ensure that no jobs similar to the current job succeeded a few seconds ago.
     response = Net::HTTP.get(uri_for_successful)
     successful_builds = JSON.parse(response)
     few_seconds_ago = Time.now - 30 # observed latency are up to 10 seconds.
@@ -186,9 +148,42 @@ def other_job_is_running?(uri_for_running, uri_for_successful, targeted_job, cur
   end
 end
 
-puts("Check no other #{options.job} for #{options.branch} branch is running.")
+# @params cli [CLI]
+# @params filter_option [String] running or successful.
+def build_circleci_uri(cli, filter)
+  URI::HTTPS.build(
+    host: "circleci.com",
+    path: File.join(
+      "/api/v1.1/project",
+      cli.vcs.to_s,
+      cli.organization.to_s,
+      cli.project.to_s,
+      "tree",
+      cli.branch.to_s
+    ),
+    query: URI.encode_www_form(
+      "circle-token" => cli.token.to_s,
+      "shallow" => true,
+      "filter" => filter
+    )
+  )
+end
 
-while other_job_is_running?(uri_for_running, uri_for_successful, options.job.to_s, options.current_job.to_s, options.build_number.to_i) do
-  puts("Another #{options.job} for #{options.branch} branch already running, check again in #{options.interval} seconds.\n")
-  sleep(options.interval.to_i)
+cli = CLI.new
+
+begin
+  cli.parse(ARGV)
+rescue ArgumentError => e
+  puts(e.message)
+  exit(1)
+end
+
+uri_for_running = build_circleci_uri(cli, "running")
+uri_for_successful = build_circleci_uri(cli, "successful")
+
+puts("Check no other #{cli.job} for #{cli.branch} branch is running.")
+
+while other_job_is_running?(uri_for_running, uri_for_successful, cli.job.to_s, cli.current_job.to_s, cli.build_number.to_i) do
+  puts("Another #{cli.job} for #{cli.branch} branch already running, check again in #{cli.interval} seconds.\n")
+  sleep(cli.interval.to_i)
 end
