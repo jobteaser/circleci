@@ -76,53 +76,21 @@ class CLI
   end
 end
 
-cli = CLI.new
+def other_job_is_running?(uri_for_running, uri_for_successful, targeted_job, current_job, current_build_num)
+  response = Net::HTTP.get(uri_for_running)
+  running_builds = JSON.parse(response)
 
-begin
-  options = cli.parse(ARGV)
-rescue ArgumentError => e
-  puts(e.message)
-  exit(1)
-end
-
-uri = URI::HTTPS.build(host: "circleci.com",
-                       path: File.join("/",
-                                       "api",
-                                       "v1.1",
-                                       "project",
-                                       options.vcs.to_s,
-                                       options.organization.to_s,
-                                       options.project.to_s,
-                                       "tree",
-                                       options.branch.to_s),
-                       query: URI.encode_www_form({"circle-token" => options.token.to_s,
-                                                   "shallow" => true,
-                                                   "filter" => "running"}))
-
-
-def other_job_is_running?(uri, job, current_job, build_num)
-  response = Net::HTTP.get(uri)
-  builds = JSON.parse(response)
-
-  # Check if another identical job (most likely a production deployment job) is running for another build
+  # Check if another targeted job (most likely a production deployment job) is already running.
   has_concurrent_job = builds.any? do |build|
-    is_concurrent_build = build.dig("workflows", "job_name").to_s == job
-
-    puts("Checking #{build.dig("build_url")}...")
-    puts("\t" + (is_concurrent_build ? "Is a concurrent build!" : "Not a concurrent build."))
-
-    is_concurrent_build
+    build.dig("workflows", "job_name").to_s == targeted_job
   end
 
-  puts(
-    "\n" +
-    (has_concurrent_job ? "Found concurrent job" : "No concurrent job found")
-  )
-
   if has_concurrent_job
+    puts "A build is already running the job #{targeted_job}."
     return true
   else
-    puts("Check that no other builds are currently running job #{current_job}...")
+    puts "No build running job #{targeted_job} were found."
+    puts "\nChecking that no other builds are currently running job #{current_job}..."
     # We know that no "production deployment job" is running but there is a possibility that 2 builds are
     # running the same job as the current one simultaneously. This means that both builds could enter a
     # "production deployment job" at the same time after the present job is done. We must avoid it.
@@ -130,52 +98,92 @@ def other_job_is_running?(uri, job, current_job, build_num)
     # concurrent_build_management job).
     # Iterate on builds and regroup builds by job name in a dict:
     # Ex: { concurrent_build_management: [build1, build2], test_js: [build3], ...}
-    builds_by_job_name = Hash.new
-    builds.each_entry do |build|
-      build_job_name = build.dig("workflows", "job_name").to_s
-      builds_by_job_name[build_job_name] = builds_by_job_name[build_job_name] || []
-      builds_by_job_name[build_job_name].push(build)
+    concurrent_builds_for_current_job = builds.select do |build|
+      build.dig("workflows", "job_name").to_s == current_job
     end
 
-    # Look for builds that have a job name == current_job since the present script is expected to
-    # be called for a job whose concurrent run is not allowed
-    concurrent_builds_for_current_job = builds_by_job_name[current_job]
-
-    if !concurrent_builds_for_current_job || concurrent_builds_for_current_job.length() == 0
+    unless concurrent_builds_for_current_job.any?
       puts "No builds running job #{current_job} were found."
       return false
     end
 
-    puts "Checking which concurrent build is the oldest (from commit perspective)..."
+    puts "\nChecking which concurrent build is the oldest (based on committer_date)..."
 
     # Find build for the oldest code
-    oldestBuild = concurrent_builds_for_current_job.first
-    oldestCommitDate = DateTime.parse(oldestBuild.dig("committer_date"))
-    concurrent_builds_for_current_job.each_entry do |build|
-      puts "Comparing build #{build.dig("build_url")} with commit date #{build.dig("committer_date")}"
-      buildCommitDate = DateTime.parse(build.dig("committer_date"))
-      if buildCommitDate <= oldestCommitDate
-        puts "\tBuild is older"
-        oldestCommitDate = buildCommitDate
-        oldestBuild = build
-      else
-        puts "\tBuild is newer"
-      end
+    oldestBuild = concurrent_builds_for_current_job.min do |build1, build2|
+      DateTime.parse(build1["committer_date"]) <=> DateTime.parse(build2["committer_date"])
     end
 
-    if build_num == oldestBuild.dig("build_num")
-      puts "\nCurrent build has the oldest code, it can continue running"
-      return false
-    else
+    puts "Oldest build is #{oldestBuild["build_num"]}"
+
+    if current_build_num != oldestBuild["build_num"]
       puts "\nCurrent build has code more recent that another one running, it must wait"
       return true
+    end
+
+    puts "\nCurrent build has the oldest code, it can continue running"
+
+    # There is generally around 4 seconds between a job being successful and the following job being running.
+    # It means it is possible that an older job, similar to the current job, just succeeded and that
+    # the associate targeted job has not started yet.
+    # In this case, two target jobs would run concurrently.
+    # To avoid this edge case, we ensure that no jobs similar to the current job succeeded a few seconds ago.
+    response = Net::HTTP.get(uri_for_successful)
+    successful_builds = JSON.parse(response)
+    few_seconds_ago = Time.now - 30 # observed latency are up to 10 seconds.
+
+    puts "\nChecking if a build has successfully run #{current_job} few seconds ago..."
+    may_have_concurrent_job = successful_builds.any? do |build|
+      build.dig("workflows", "job_name").to_s == current_job && DateTime.parse(build["stop_time"]) > few_seconds_ago
+    end
+
+    if may_have_concurrent_job
+      puts "A build has successfully runned #{current_job} few seconds ago."
+      puts "Another build may start #{targeted_job} in few seconds."
+      return true
+    else
+      puts "No builds successfully runned job #{current_job} few seconds ago."
+      return false
     end
   end
 end
 
-puts("Check no other #{options.job} for #{options.branch} branch is running.")
+# @params cli [CLI]
+# @params filter_option [String] running or successful.
+def build_circleci_uri(cli, filter)
+  URI::HTTPS.build(
+    host: "circleci.com",
+    path: File.join(
+      "/api/v1.1/project",
+      cli.vcs.to_s,
+      cli.organization.to_s,
+      cli.project.to_s,
+      "tree",
+      cli.branch.to_s
+    ),
+    query: URI.encode_www_form(
+      "circle-token" => cli.token.to_s,
+      "shallow" => true,
+      "filter" => filter
+    )
+  )
+end
 
-while other_job_is_running?(uri, options.job.to_s, options.current_job.to_s, options.build_number.to_i) do
-  puts("Another #{options.job} for #{options.branch} branch already running, check again in #{options.interval} seconds.\n")
-  sleep(options.interval.to_i)
+cli = CLI.new
+
+begin
+  cli.parse(ARGV)
+rescue ArgumentError => e
+  puts(e.message)
+  exit(1)
+end
+
+uri_for_running = build_circleci_uri(cli, "running")
+uri_for_successful = build_circleci_uri(cli, "successful")
+
+puts("Check no other #{cli.job} for #{cli.branch} branch is running.")
+
+while other_job_is_running?(uri_for_running, uri_for_successful, cli.job.to_s, cli.current_job.to_s, cli.build_number.to_i) do
+  puts("Another #{cli.job} for #{cli.branch} branch already running, check again in #{cli.interval} seconds.\n")
+  sleep(cli.interval.to_i)
 end
