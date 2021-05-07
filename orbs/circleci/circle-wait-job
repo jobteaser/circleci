@@ -132,7 +132,7 @@ def other_job_is_running?(uri_for_running, uri_for_successful, targeted_job, cur
     successful_builds = JSON.parse(response)
     few_seconds_ago = Time.now - 30 # observed latency are up to 10 seconds.
 
-    puts "\nChecking if a build has successfully runned #{current_job} few seconds ago..."
+    puts "\nChecking if a build has successfully run #{current_job} few seconds ago..."
     may_have_concurrent_job = successful_builds.any? do |build|
       build.dig("workflows", "job_name").to_s == current_job && DateTime.parse(build["stop_time"]) > few_seconds_ago
     end
