@@ -129,9 +129,9 @@ def other_job_is_running?(uri, job, build_num)
   end
 end
 
-puts("Avoid neither concurrent #{options.job} for branch #{options.branch} nor deadlock happen.")
+puts "Avoid neither concurrent #{options.job} for branch #{options.branch} nor deadlock happen."
 
 while other_job_is_running?(uri, options.job.to_s, options.build_number.to_i) do
-  puts "Sleep #{options.interval} seconds before a new check")
+  puts "Sleep #{options.interval} seconds before a new check"
   sleep(options.interval)
 end
