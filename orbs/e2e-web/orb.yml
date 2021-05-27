@@ -16,7 +16,7 @@ executors:
     docker:
       - image: "circleci/node:12-browsers"
         environment:
-          DEBUG: "false"
+          DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
           # ensure we use the chromedriver embedded in the docker image
           # rather than the one from package.json
@@ -31,7 +31,7 @@ executors:
     docker:
       - image: "circleci/node:12-browsers"
         environment:
-          DEBUG: "false"
+          DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
           # ensure we use the chromedriver embedded in the docker image
           # rather than the one from package.json
@@ -45,7 +45,7 @@ executors:
     docker:
       - image: "circleci/node:12-browsers"
         environment:
-          DEBUG: "false"
+          DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
           # ensure we use the chromedriver embedded in the docker image
           # rather than the one from package.json
@@ -60,7 +60,7 @@ executors:
     docker:
       - image: "circleci/node:12-browsers"
         environment:
-          DEBUG: "false"
+          DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
           # ensure we use the chromedriver embedded in the docker image
           # rather than the one from package.json
@@ -70,7 +70,7 @@ executors:
     docker:
       - image: "circleci/openjdk:11-stretch-node"
         environment:
-          DEBUG: "false"
+          DEBUG: "trace"
 
 commands:
   clone_test_suite:
@@ -85,6 +85,33 @@ commands:
           name: "clone the test suite"
           command: |
             git clone -b << parameters.branch >> git@github.com:jobteaser/e2e_jt_tests.git
+
+  check_pr:
+    description: "Verify if there is a PR ready to review to run tests"
+    steps:
+      - run:
+          name: "Verify PR status"
+          command: |
+            if [ -v $CIRCLE_PULL_REQUEST ]; then
+                echo "No PR opened, tests will not run"
+                circleci-agent step halt
+                exit 0
+            fi
+            PR_NUMBER=$(echo $CIRCLE_PULL_REQUEST| awk -F"pull/" '{print $2}')
+            RESPONSE=$(curl --silent \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/pulls/$PR_NUMBER
+            )
+            DRAFT=$(echo $RESPONSE | grep -oE '"draft": (true|false)' )
+
+            if [[ $DRAFT == *'true'* ]]; then
+              echo "Draft PR, do not run tests"
+              circleci-agent step halt
+              exit 0
+            else
+              echo "Non Draft PR, tests will be run"
+            fi
 
   manage_dependencies:
     description: "Use cache management for dependencies or install fresh ones"
@@ -230,6 +257,7 @@ jobs:
         default: "$CIRCLE_CI_HM_TOKEN"
     executor: "<< parameters.executor_type >>"
     steps:
+      - check_pr
       - service/configure_ssh
       - clone_test_suite:
           branch: << parameters.branch >>
