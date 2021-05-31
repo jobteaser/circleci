@@ -257,7 +257,6 @@ jobs:
         default: "$CIRCLE_CI_HM_TOKEN"
     executor: "<< parameters.executor_type >>"
     steps:
-      - check_pr
       - service/configure_ssh
       - clone_test_suite:
           branch: << parameters.branch >>
