@@ -117,14 +117,14 @@ commands:
     description: "Use cache management for dependencies or install fresh ones"
     steps:
       - restore_cache:
-          key: npm-dep-{{ checksum "e2e_jt_tests/package-lock.json" }}
+          key: npm-dep-{{ .Branch }}-{{ checksum "e2e_jt_tests/package-lock.json" }}
       - run:
           working_directory: e2e_jt_tests
           name: "install dependencies"
           command: |
             npm install
       - save_cache:
-          key: npm-dep-{{ checksum "e2e_jt_tests/package-lock.json" }}
+          key: npm-dep-{{ .Branch }}-{{ checksum "e2e_jt_tests/package-lock.json" }}
           paths:
             - ./e2e_jt_tests/node_modules
 
