@@ -57,7 +57,7 @@ You can configure a SSH key with write permission as follows:
 2. Then, use this GitHub session to connect to CircleCI
 3. Go to your project. Then, on the "project settings > Checkout SSH keys" page, click the
    "Authorize with Github" button. This gives CircleCI permission to
-   create and upload SSH keys to Github.
+   create and upload SSH keys to Github. If a user key associated with a person profile is already present, replace it with the machine user key. 
 4. Click the "Create and add XXX user key" button.
 
 Now CircleCI will use the SSH key with read and write permissions.
