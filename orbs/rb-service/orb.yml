@@ -73,8 +73,8 @@ jobs:
             bundle exec rake test
             <<parameters.after_test>>
       - save_ruby_bundle_cache
-      - store_artifacts:
-          path: scenarios.html
+      - store_test_results:
+          path: test-results
 
   build:
     parameters:
