@@ -3,7 +3,7 @@ FROM ubuntu:20.04
 LABEL vendor="JobTeaser"
 LABEL maintainer="foundation@jobteaser.com"
 
-ENV HELM_VERSION 2.12.3
+ENV HELM_VERSION 3.6.3
 ENV KUBE_VERSION 1.18.8
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -32,8 +32,7 @@ RUN apt-get update -y && \
       wget -q https://get.helm.sh/helm-v$HELM_VERSION-linux-amd64.tar.gz && \
       tar -xzf helm-v$HELM_VERSION-linux-amd64.tar.gz && \
       cd linux-amd64 && \
-      install -m755 helm /usr/local/bin/helm && \
-      install -m755 tiller /usr/local/bin/tiller \
+      install -m755 helm /usr/local/bin/helm \
     ) && \
     \
     apt-get autoremove -y && \

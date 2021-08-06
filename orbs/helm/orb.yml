@@ -76,6 +76,10 @@ commands:
         description: "The runtime environment."
         type: string
         default: "prod"
+      kubernetes_namespace:
+        description: "The Kubernetes namespace."
+        type: string
+        default: "$CIRCLE_PROJECT_REPONAME"
       helm_chart_path:
         description: "The path of the Helm chart."
         type: string
@@ -94,12 +98,12 @@ commands:
           command: |
             mkdir -p /tmp/helm-templates/<<parameters.environment>>
             helm template \
-              -n <<parameters.helm_release_name>> \
+              <<parameters.helm_release_name>> <<parameters.helm_chart_path>> \
+              -n <<parameters.kubernetes_namespace>> \
               -f <<parameters.helm_value_file_path>> \
               --set=circleci.sha1=$CIRCLE_SHA1 \
               --set=circleci.branch=$CIRCLE_BRANCH \
-              --output-dir /tmp/helm-templates/<<parameters.environment>> \
-              <<parameters.helm_chart_path>>
+              --output-dir /tmp/helm-templates/<<parameters.environment>>
       - store_artifacts:
           path: "/tmp/helm-templates/<<parameters.environment>>"
 
@@ -148,7 +152,6 @@ jobs:
           name: "Push Helm chart to remote repo"
           command: |
             cd <<parameters.helm_chart_path>>
-            helm init --client-only --stable-repo-url https://charts.helm.sh/stable
             helm plugin install https://github.com/chartmuseum/helm-push
             helm repo add --username <<parameters.helm_repo_user>> --password <<parameters.helm_repo_pass>> jobteaser-private <<parameters.helm_repo_url>>
             helm repo add jobteaser-public https://jobteaser.github.io/charts
@@ -254,7 +257,6 @@ jobs:
           name: "Initialize Helm"
           command: |
             cd <<parameters.helm_chart_path>>
-            helm init --client-only --stable-repo-url https://charts.helm.sh/stable
             helm repo add jobteaser https://jobteaser.github.io/charts
             helm dep update
       - when:
@@ -273,7 +275,7 @@ jobs:
           no_output_timeout: <<parameters.no_output_timeout>>
           command: |
             helm upgrade \
-              --tiller-namespace=<<parameters.kubernetes_namespace>> \
+              <<parameters.helm_release_name>> <<parameters.helm_chart_path>> \
               --namespace=<<parameters.kubernetes_namespace>> \
               -f <<parameters.helm_value_file_path>> \
               --set=circleci.sha1=$CIRCLE_SHA1 \
@@ -281,7 +283,7 @@ jobs:
               --set=image=<<parameters.docker_image>>:<<parameters.docker_tag>> \
               --wait=<<parameters.helm_wait_for_ready>> \
               --timeout=<<parameters.helm_upgrade_timeout>> \
-              --install <<parameters.helm_release_name>> <<parameters.helm_chart_path>>
+              --install
       - when:
           condition: <<parameters.tag_deployment>>
           steps:
