@@ -280,7 +280,7 @@ jobs:
               --set=circleci.branch=$CIRCLE_BRANCH \
               --set=image=<<parameters.docker_image>>:<<parameters.docker_tag>> \
               --wait=<<parameters.helm_wait_for_ready>> \
-              --timeout=<<parameters.helm_upgrade_timeout>> \
+              --timeout=<<parameters.helm_upgrade_timeout>>s \
               --install <<parameters.helm_release_name>> <<parameters.helm_chart_path>>
       - when:
           condition: <<parameters.tag_deployment>>
