@@ -4,6 +4,8 @@ LABEL vendor="JobTeaser"
 LABEL maintainer="opensource@jobteaser.com"
 
 ENV DEBIAN_FRONTEND noninteractive
+ENV NODE_VERSION 14.17.6
+ENV NPM_VERSION 7.24.1
 
 RUN apt-get update -y && \
     apt-get upgrade -y && \
@@ -13,10 +15,21 @@ RUN apt-get update -y && \
       # checkout
       git openssh-client \
       # node installation
-      bash curl \
+      bash curl wget \
     && \
-    curl -sL https://deb.nodesource.com/setup_14.x | bash - && \
-    apt-get install -y --no-install-recommends nodejs && \
+    ( \
+      cd /tmp && \
+      wget -q https://nodejs.org/download/release/v$NODE_VERSION/node-v$NODE_VERSION-linux-x64.tar.gz && \
+      tar -xzf node-v$NODE_VERSION-linux-x64.tar.gz && \
+      rm node-v$NODE_VERSION-linux-x64.tar.gz && \
+      cd node-v$NODE_VERSION-linux-x64 && \
+      cp -r bin /usr/local/ && \
+      cp -r include /usr/local/ && \
+      cp -r lib /usr/local/ && \
+      cp -r share /usr/local/ && \
+      rm -rf node-v$NODE_VERSION-linux-x64 \
+    ) && \
+    npm install -g npm@$NPM_VERSION && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get autoremove -y && \
     apt-get clean -y
