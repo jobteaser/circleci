@@ -19,9 +19,6 @@ executors:
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
-          # ensure we use the chromedriver embedded in the docker image
-          # rather than the one from package.json
-          CHROMEDRIVER_FILEPATH: /usr/local/bin/chromedriver
           FORCE_COLOR: "0"
   large:
     parameters:
@@ -34,9 +31,6 @@ executors:
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
-          # ensure we use the chromedriver embedded in the docker image
-          # rather than the one from package.json
-          CHROMEDRIVER_FILEPATH: /usr/local/bin/chromedriver
           FORCE_COLOR: "0"
   medium:
     parameters:
@@ -48,9 +42,6 @@ executors:
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
-          # ensure we use the chromedriver embedded in the docker image
-          # rather than the one from package.json
-          CHROMEDRIVER_FILEPATH: /usr/local/bin/chromedriver
           FORCE_COLOR: "0"
   small:
     parameters:
@@ -63,9 +54,6 @@ executors:
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
-          # ensure we use the chromedriver embedded in the docker image
-          # rather than the one from package.json
-          CHROMEDRIVER_FILEPATH: /usr/local/bin/chromedriver
           FORCE_COLOR: "0"
   browserstack:
     docker:
@@ -123,7 +111,7 @@ commands:
           working_directory: e2e_jt_tests
           name: "install dependencies"
           command: |
-            npm install
+            npm i
       - save_cache:
           key: npm-dep-{{ .Branch }}-{{ checksum "e2e_jt_tests/package-lock.json" }}
           paths:
