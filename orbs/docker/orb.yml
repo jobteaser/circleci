@@ -26,6 +26,7 @@ commands:
           name: "Login on the remote registry."
           command: |
             echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_LOGIN" --password-stdin
+            echo "$HARBOR_PASSWORD" | docker login "$HARBOR_HOSTNAME" -u "$HARBOR_LOGIN" --password-stdin || echo "Not able to login on $HARBOR_HOSTNAME"
 
   build_image:
     parameters:
@@ -111,11 +112,16 @@ commands:
       - run:
           name: "Push the image to the remote registry."
           command: |
+            docker tag <<parameters.image_name>>:<<parameters.image_tag>> $HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>>
             docker push <<parameters.image_name>>:<<parameters.image_tag>>
+            docker push $HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>> || echo "Not able to push on $HARBOR_HOSTNAME"
             if [ "$CIRCLE_BRANCH" = "<<parameters.push_latest_on>>" ]; then
               docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
                          <<parameters.image_name>>:latest
+              docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
+                         $HARBOR_HOSTNAME/<<parameters.image_name>>:latest
               docker push <<parameters.image_name>>:latest
+              docker push $HARBOR_HOSTNAME/<<parameters.image_name>>:latest || echo "Not able to push on $HARBOR_HOSTNAME"
             fi
 
 jobs:
