@@ -5,6 +5,7 @@ description: |
 
 orbs:
   service: "jobteaser/service@0.10.0"
+  browser-tools: circleci/browser-tools@1.2.2
 
 executors:
   xlarge:
@@ -14,7 +15,7 @@ executors:
         default: "30"
     resource_class: "xlarge"
     docker:
-      - image: "circleci/node:12-browsers"
+      - image: "cimg/node:12.22-browsers"
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -29,7 +30,7 @@ executors:
         default: "30"
     resource_class: "large"
     docker:
-      - image: "circleci/node:12-browsers"
+      - image: "cimg/node:12.22-browsers"
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -43,7 +44,7 @@ executors:
         type: string
         default: "30"
     docker:
-      - image: "circleci/node:12-browsers"
+      - image: "cimg/node:12.22-browsers"
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -58,7 +59,7 @@ executors:
         default: "30"
     resource_class: "small"
     docker:
-      - image: "circleci/node:12-browsers"
+      - image: "cimg/node:12.22-browsers"
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -68,7 +69,7 @@ executors:
           FORCE_COLOR: "0"
   browserstack:
     docker:
-      - image: "circleci/openjdk:11-stretch-node"
+      - image: "cimg/openjdk:11.0-node"
         environment:
           DEBUG: "trace"
 
@@ -159,6 +160,7 @@ commands:
         type: string
         default: script/find_correct_tests_ui_jobteaser.sh
     steps:
+      - browser-tools/install-browser-tools
       - run:
           name: "Find tags to run, halt if no tags matched or run tests"
           command: |
