@@ -15,7 +15,7 @@ RUN apt-get update -y && \
       # checkout
       git openssh-client \
       # node installation
-      bash curl wget \
+      bash wget \
     && \
     ( \
       cd /tmp && \
