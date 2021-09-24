@@ -6,7 +6,7 @@ description: |
 executors:
   default:
     docker:
-      - image: "jobteaser/circleci-changelog-publish:latest"
+      - image: "jobteaser/circleci-changelog-publish:1.0.0"
         auth:
           username: "$DOCKER_LOGIN"
           password: "$DOCKER_PASSWORD"
