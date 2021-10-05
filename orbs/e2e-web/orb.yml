@@ -180,6 +180,8 @@ commands:
     steps:
       - store_artifacts:
           path: "e2e_jt_tests/reports/webdriverServer/"
+      - store_artifacts:
+          path: "e2e_jt_tests/reports/tracking-report/"
       - store_test_results:
           path: "e2e_jt_tests/reports/junit/"
       - run:
@@ -224,6 +226,15 @@ commands:
               fi
             fi
             npm run slackArtifactURL << parameters.channel >> << parameters.ciToken >>
+          when: always
+
+  verify_tracking:
+    description: "Verify tracking logs"
+    steps:
+      - run:
+          name: "Verify Tracking"
+          working_directory: e2e_jt_tests
+          command: npm run verifyTracking
           when: always
 
 jobs:
@@ -279,3 +290,4 @@ jobs:
       - slack_alerting:
           channel: << parameters.channel >>
           ciToken: << parameters.ciToken >>
+      - verify_tracking
