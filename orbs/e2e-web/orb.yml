@@ -15,7 +15,7 @@ executors:
         default: "30"
     resource_class: "xlarge"
     docker:
-      - image: "cimg/node:12.22-browsers"
+      - image: "cimg/node:14.18-browsers"
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -27,7 +27,7 @@ executors:
         default: "30"
     resource_class: "large"
     docker:
-      - image: "cimg/node:12.22-browsers"
+      - image: "cimg/node:14.18-browsers"
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -38,7 +38,7 @@ executors:
         type: string
         default: "30"
     docker:
-      - image: "cimg/node:12.22-browsers"
+      - image: "cimg/node:14.18-browsers"
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -50,7 +50,7 @@ executors:
         default: "30"
     resource_class: "small"
     docker:
-      - image: "cimg/node:12.22-browsers"
+      - image: "cimg/node:14.18-browsers"
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
