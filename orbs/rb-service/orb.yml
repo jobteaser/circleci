@@ -37,8 +37,23 @@ commands:
       - restore_cache:
           keys:
             - $CIRCLE_PROJECT_REPONAME-v3-{{ .Branch }}-{{ checksum "Gemfile.lock" }}
-            - $CIRCLE_PROJECT_REPONAME-v3-{{ .Branch }}
-            - $CIRCLE_PROJECT_REPONAME-v3-
+
+  install_ruby_dependencies:
+    parameters:
+      bundler_options:
+        type: string
+        default: ''
+    steps:
+      - restore_ruby_bundle_cache
+      - run:
+          name: "Install dependencies"
+          command: |
+            bundle config set path "vendor/bundle"
+            bundle install << parameters.bundler_options >> \
+              --retry=3 \
+              --jobs=2 \
+              --no-color
+      - save_ruby_bundle_cache
 
 jobs:
   test:
@@ -59,20 +74,13 @@ jobs:
     steps:
       - service/configure_ssh
       - checkout
-      - restore_ruby_bundle_cache
-      - run:
-          name: "Install dependencies"
-          command: |
-            bundle config set path "vendor/bundle"
-            bundle install --retry=3 --jobs=2 --no-color
-      - save_ruby_bundle_cache
+      - install_ruby_dependencies
       - run:
           name: "Run tests"
           command: |
             <<parameters.before_test>>
             bundle exec rake test
             <<parameters.after_test>>
-      - save_ruby_bundle_cache
       - store_test_results:
           path: test-results
 
@@ -86,12 +94,8 @@ jobs:
     steps:
       - service/configure_ssh
       - checkout
-      - restore_ruby_bundle_cache
-      - run:
-          name: "Install dependencies"
-          command: |
-            bundle config set path "vendor/bundle"
-            bundle install --retry=3 --jobs=2 --no-color
+      - install_ruby_dependencies:
+          bundler_options: "--without development test"
       - service/generate_build_info
       - docker/setup
       - docker/login
