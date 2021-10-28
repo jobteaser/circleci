@@ -40,16 +40,21 @@ commands:
 
   install_ruby_dependencies:
     parameters:
-      bundler_options:
+      bundle_without:
         type: string
-        default: ''
+        default: ""
+        description: "Passed to `bundle config set without`"
     steps:
       - restore_ruby_bundle_cache
       - run:
           name: "Install dependencies"
           command: |
             bundle config set path "vendor/bundle"
-            bundle install << parameters.bundler_options >> \
+            bundle_without_param="<< parameters.bundle_without >>"
+            if [ -n "$bundle_without_param" ]; then
+              bundle config set --local without "$bundle_without_param"
+            fi
+            bundle install \
               --retry=3 \
               --jobs=2 \
               --no-color
@@ -95,7 +100,7 @@ jobs:
       - service/configure_ssh
       - checkout
       - install_ruby_dependencies:
-          bundler_options: "--without development test"
+          bundle_without: "development test"
       - service/generate_build_info
       - docker/setup
       - docker/login
