@@ -115,6 +115,24 @@ commands:
             docker tag <<parameters.image_name>>:<<parameters.image_tag>> $HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>>
             docker push <<parameters.image_name>>:<<parameters.image_tag>>
             docker push $HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>> || echo "Not able to push on $HARBOR_HOSTNAME"
+            case $CIRCLE_BRANCH in
+              main|develop|master)
+                # DockerHub
+                docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
+                         <<parameters.image_name>>:prod-<<parameters.image_tag>>
+                docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
+                         <<parameters.image_name>>:staging-<<parameters.image_tag>>
+                docker push <<parameters.image_name>>:prod-<<parameters.image_tag>>
+                docker push <<parameters.image_name>>:staging-<<parameters.image_tag>>
+                # Harbor
+                docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
+                         $HARBOR_HOSTNAME/<<parameters.image_name>>:prod-<<parameters.image_tag>>
+                docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
+                         $HARBOR_HOSTNAME/<<parameters.image_name>>:staging-<<parameters.image_tag>>
+                docker push $HARBOR_HOSTNAME/<<parameters.image_name>>:prod-<<parameters.image_tag>> || echo "Not able to push on $HARBOR_HOSTNAME"
+                docker push $HARBOR_HOSTNAME/<<parameters.image_name>>:staging-<<parameters.image_tag>> || echo "Not able to push on $HARBOR_HOSTNAME"
+                ;;
+            esac
             if [ "$CIRCLE_BRANCH" = "<<parameters.push_latest_on>>" ]; then
               docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
                          <<parameters.image_name>>:latest
