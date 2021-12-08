@@ -73,3 +73,32 @@ jobs:
       # "stop_if_stale" ensures that builds for code that already present on production are not deployed again
       - stop_if_stale:
           environment: <<parameters.environment>>
+
+  report_hold:
+    description: >
+      A job to run in cron to send a Slack notif if a workflow is on hold for too long
+    executor: "concurrent"
+    parameters:
+      project_slug:
+        description: "Slug of the target CircleCI Project to check for workflows on hold."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      target_branch:
+        description: "Target branch to check for workflows on hold."
+        type: string
+        default: "master"
+      circle_token_env_var:
+        description: "Name of the env var where the CircleCI token lives"
+        type: env_var_name
+        default: "CIRCLE_TOKEN"
+      slack_webhook_env_var:
+        description: "Name of the env var where the Slack Webhook lives"
+        type: env_var_name
+        default: "SLACK_WEBHOOK"
+    environment:
+      SLACK_WEBHOOK: "${<<parameters.slack_webhook_env_var>>}"
+      CIRCLE_TOKEN: "${<<parameters.circle_token_env_var>>}"
+    steps:
+      - run:
+          name: "Wait for all other builds to complete"
+          command: report-hold "<<parameters.project_slug>>" "<<parameters.target_branch>>" 
