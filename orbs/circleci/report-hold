@@ -85,6 +85,7 @@ get_branch_pipelines.each do |pipeline|
       text = format('Deploy of %s by %s has been on hold for %s days, maybe do something: %s', PROJECT_SLUG, user, days, url)
 
       notify_slack(text)
+      $stdout.puts("Posted to Slack: #{text}")
 
       break :done
     end
