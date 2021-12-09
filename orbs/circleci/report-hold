@@ -46,7 +46,7 @@ def post(url, params = {})
   res = http.request(req)
   raise "failed POST request to #{url}: #{res.code} #{res.body}" unless res.is_a?(Net::HTTPSuccess)
 
-  JSON.parse(res)
+  res
 end
 
 def get_branch_pipelines(pages: 3)
