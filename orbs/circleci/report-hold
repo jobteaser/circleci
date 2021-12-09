@@ -1,0 +1,94 @@
+#!/usr/bin/env ruby
+
+require 'uri'
+require 'net/http'
+require 'json'
+require 'date'
+
+def usage(msg)
+  warn("\nError: #{msg}\n\n")
+  warn('Usage: CIRCLE_TOKEN=token SLACK_WEBHOOK=hook report-hold <project-slug> [<branch=master>]')
+  exit 1
+end
+
+CIRCLE_TOKEN = ENV['CIRCLE_TOKEN']
+usage('empty CIRCLE_TOKEN') if CIRCLE_TOKEN.to_s == ''
+
+SLACK_WEBHOOK = ENV['SLACK_WEBHOOK']
+usage('empty SLACK_WEBHOOKS') if SLACK_WEBHOOK.to_s == ''
+
+PROJECT_SLUG = ARGV.first
+usage('empty project slug (first arg)') if PROJECT_SLUG.to_s == ''
+
+TARGET_BRANCH = ARGV[1].to_s == '' ? 'master' : ARGV[1]
+
+def get(url, query = {})
+  uri = URI(url)
+  uri.query = URI.encode_www_form(query) if query
+  req = Net::HTTP::Get.new(uri)
+  req.basic_auth CIRCLE_TOKEN, ''
+
+  http = Net::HTTP.new(uri.host, uri.port)
+  http.use_ssl = true
+  res = http.request(req)
+  raise "failed GET request to #{url}: #{res.code} #{res.body}" unless res.is_a?(Net::HTTPSuccess)
+
+  JSON.parse(res.body)
+end
+
+def post(url, params = {})
+  uri = URI(url)
+  req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
+  req.body = params.to_json if params
+
+  http = Net::HTTP.new(uri.hostname, uri.port)
+  http.use_ssl = true
+  res = http.request(req)
+  raise "failed POST request to #{url}: #{res.code} #{res.body}" unless res.is_a?(Net::HTTPSuccess)
+
+  res
+end
+
+def get_branch_pipelines(pages: 3)
+  next_page_token = ''
+  res = []
+
+  pages.times do
+    resp = get("https://circleci.com/api/v2/project/gh/jobteaser/#{PROJECT_SLUG}/pipeline", next_page_token: next_page_token)
+    next_page_token = resp['next_page_token']
+    res += resp['items']
+           .select { |pipeline| pipeline.dig('vcs', 'branch') == TARGET_BRANCH }
+           .compact
+    break if next_page_token.to_s == ''
+  end
+
+  res
+end
+
+def get_pipeline_workflows(pipeline_id)
+  resp = get("https://circleci.com/api/v2/pipeline/#{pipeline_id}/workflow")
+  resp['items']
+end
+
+def notify_slack(text)
+  post(SLACK_WEBHOOK, text: text)
+end
+
+get_branch_pipelines.each do |pipeline|
+  res = get_pipeline_workflows(pipeline['id']).each do |workflow|
+    created_at = DateTime.parse(workflow['created_at'])
+
+    if workflow['status'] == 'on_hold' && created_at < DateTime.now.prev_day
+      days = (DateTime.now - created_at).to_i
+      user = pipeline.dig('trigger', 'actor', 'login')
+      url = "https://app.circleci.com/pipelines/github/jobteaser/#{PROJECT_SLUG}?branch=#{TARGET_BRANCH}"
+      text = format('Deploy of %s by %s has been on hold for %s days, maybe do something: %s', PROJECT_SLUG, user, days, url)
+
+      notify_slack(text)
+      $stdout.puts("Posted to Slack: #{text}")
+
+      break :done
+    end
+  end
+  break if res == :done
+end
