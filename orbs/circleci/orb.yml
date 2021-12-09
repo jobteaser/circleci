@@ -82,7 +82,7 @@ jobs:
       project_slug:
         description: "Slug of the target CircleCI Project to check for workflows on hold."
         type: string
-        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+        default: "$CIRCLE_PROJECT_REPONAME"
       target_branch:
         description: "Target branch to check for workflows on hold."
         type: string
