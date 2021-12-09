@@ -10,6 +10,9 @@ executors:
         auth:
           username: "$DOCKER_LOGIN"
           password: "$DOCKER_PASSWORD"
+  ruby:
+    docker:
+      - image: "ruby:3.0-alpine"
 
 commands:
   wait_on_concurrent_job:
@@ -77,7 +80,7 @@ jobs:
   report_hold:
     description: >
       A job to run in cron to send a Slack notif if a workflow is on hold for too long
-    executor: "concurrent"
+    executor: "ruby"
     parameters:
       project_slug:
         description: "Slug of the target CircleCI Project to check for workflows on hold."
