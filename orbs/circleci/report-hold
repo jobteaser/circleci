@@ -74,7 +74,7 @@ def notify_slack(text)
   post(SLACK_WEBHOOK, text: text)
 end
 
-get_branch_pipelines.each do |pipeline|
+res = get_branch_pipelines.each do |pipeline|
   res = get_pipeline_workflows(pipeline['id']).each do |workflow|
     created_at = DateTime.parse(workflow['created_at'])
 
@@ -87,8 +87,10 @@ get_branch_pipelines.each do |pipeline|
       notify_slack(text)
       $stdout.puts("Posted to Slack: #{text}")
 
-      break :done
+      break :found
     end
   end
-  break if res == :done
+  break :found if res == :found
 end
+
+$stdout.puts('No workflow on hold found') unless res == :found
