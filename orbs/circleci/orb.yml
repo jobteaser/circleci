@@ -82,23 +82,21 @@ jobs:
       project_slug:
         description: "Slug of the target CircleCI Project to check for workflows on hold."
         type: string
-        default: "$CIRCLE_PROJECT_REPONAME"
+        default: "${CIRCLE_PROJECT_REPONAME}"
       target_branch:
         description: "Target branch to check for workflows on hold."
         type: string
         default: "master"
-      circle_token_env_var:
+      circle_token:
         description: "Name of the env var where the CircleCI token lives"
-        type: env_var_name
-        default: "CIRCLE_TOKEN"
-      slack_webhook_env_var:
-        description: "Name of the env var where the Slack Webhook lives"
-        type: env_var_name
-        default: "SLACK_WEBHOOK"
-    environment:
-      SLACK_WEBHOOK: "${<<parameters.slack_webhook_env_var>>}"
-      CIRCLE_TOKEN: "${<<parameters.circle_token_env_var>>}"
+        type: string
+        default: "${CIRCLE_TOKEN}"
+      slack_webhook:
+        description: "Slack Webhook to notify"
+        type: string
+        default: "${SLACK_WEBHOOK}"
     steps:
       - run:
           name: "Wait for all other builds to complete"
-          command: report-hold "<<parameters.project_slug>>" "<<parameters.target_branch>>" 
+          command: |
+            SLACK_WEBHOOK="<<parameters.slack_webhook>>" CIRCLE_TOKEN="<<parameters.circle_token>>" report-hold "<<parameters.project_slug>>" "<<parameters.target_branch>>" 

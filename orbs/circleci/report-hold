@@ -49,7 +49,7 @@ def post(url, params = {})
   res
 end
 
-def get_branch_pipelines(pages: 3)
+def get_branch_pipelines(pages: 5)
   next_page_token = ''
   res = []
 
