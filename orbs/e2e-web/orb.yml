@@ -57,7 +57,7 @@ executors:
           FORCE_COLOR: "0"
   browserstack:
     docker:
-      - image: "cimg/openjdk:11.0-node"
+      - image: "cimg/node:16.13-browsers"
         environment:
           DEBUG: "trace"
 
