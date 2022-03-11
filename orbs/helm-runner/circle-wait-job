@@ -1,0 +1,137 @@
+#!/usr/bin/env ruby
+
+require("optparse")
+require("net/http")
+require("json")
+
+class CLI
+  attr_reader(:token, :organization, :project, :job, :branch, :interval, :vcs, :build_number)
+
+  def initialize
+    @branch = ENV["CIRCLE_BRANCH"]
+    @interval = 60
+    @vcs = "github"
+    @build_number = ENV["CIRCLE_BUILD_NUM"]
+    @token = ENV["CIRCLE_TOKEN"]
+    @job = ENV["CIRCLE_JOB"]
+    @organization = ENV["CIRCLE_PROJECT_USERNAME"]
+    @project = ENV["CIRCLE_PROJECT_REPONAME"]
+  end
+
+  def parse(args)
+    OptionParser.new do |parser|
+      define_options!(parser)
+      parser.parse!(args)
+    end
+
+    must_not_empty("branch", @branch)
+    must_not_empty("interval", @interval)
+    must_not_empty("vcs", @vcs)
+    must_not_empty("current-build-number", @build_number)
+    must_not_empty("token", @token)
+    must_not_empty("job", @job)
+    must_not_empty("organization", @organization)
+    must_not_empty("project", @project)
+
+    self
+  end
+
+  private
+
+  def must_not_empty(key, value)
+    if value.to_s.empty?
+      raise(ArgumentError, "the #{key} is missing or empty")
+    end
+  end
+
+  def define_options!(parser)
+    parser.banner = "Usage: circleci-wait-job OPTIONS"
+    parser.separator("")
+    parser.separator("OPTIONS")
+    parser.separator("")
+
+    parser.on("-t=VALUE", "--token=VALUE", "the circleci api token") { |value| @token = value }
+    parser.on("-o=VALUE", "--organization=VALUE", "the circleci organization name") { |value| @organization = value }
+    parser.on("-p=VALUE", "--project=VALUE", "the circleci project name") { |value| @project = value }
+    parser.on("-j=VALUE", "--job=VALUE", "the circleci job name") { |value| @job = value }
+    parser.on("-b=VALUE", "--branch=VALUE", "the circleci branch") { |value| @branch = value }
+    parser.on("-i=VALUE", "--interval=VALUE", "the wait time between pooling") { |value| @interval = value }
+    parser.on("--vcs=VALUE", "the version control system (default: github)") { |value| @vcs = value }
+    parser.on("--current-build-number=VALUE", "the current circleci build number") { |value| @build_number = value }
+
+    parser.on_tail("-h", "--help", "print help and exit") do
+      puts(parser)
+      exit(0)
+    end
+
+    parser.on_tail("--version", "print version and exit") do
+      puts("v0.0.2")
+      exit(0)
+    end
+  end
+end
+
+cli = CLI.new
+
+begin
+  options = cli.parse(ARGV)
+rescue ArgumentError => e
+  puts(e.message)
+  exit(1)
+end
+
+uri = URI::HTTPS.build(host: "circleci.com",
+                       path: File.join("/",
+                                       "api",
+                                       "v1.1",
+                                       "project",
+                                       options.vcs.to_s,
+                                       options.organization.to_s,
+                                       options.project.to_s,
+                                       "tree",
+                                       options.branch.to_s),
+                       query: URI.encode_www_form({"circle-token" => options.token.to_s,
+                                                   "shallow" => true,
+                                                   "filter" => "running"}))
+
+# CircleCI doesn't have built in way to avoid running to job at the same time on the same branch.
+# It means we have handle it manually.
+# Our main goal here is to avoid two helm deployement at the same time. It may impact badly the stability of the plateform.
+#
+# The easiest way to achieve is to add a task at the beginning of the job which wait if another build is running the same job.
+# It works fine until a deadlock, where two jobs are waiting each other.
+#
+# The issue come from the difficulty to known if the other job is already deploying our just waiting.
+# In case of concurrency, we can favor the build with the older committer_date, but we have no garanty that the other one is not deploying.
+# Indeed, a workflow can be runned faster than another one leading to a newest committer_date being deployed before the older.
+# Then, the use of committer_date avoid deadlock but may lead to concurrent deployment.
+#
+# Because we cannot determine if concurrent builds are already deploying or not, the most safe way to avoid both, concurrent deployment and deadlock, is to follow a first in first out logic.
+# The first build may not be aware of the second build and may have started to deploy.
+# At the opposite, the second build is always aware of the first build and can wait for its completion before deploying.
+# There is no risk of concurrency neither deadlock.
+#
+# We can use the build_num to easily know the first build. However, the builnumber is set at the queue time and not at the start time.
+# It means it correspond to the order of queue and not start.
+# It is possible for a build to start before another build that has been queued first.
+# I would be more correct to use "start_time". But the build number is safe enough.
+# The time between queue and start is less than 10 seconds whereas the time to setup the env is 20 second.
+# If this case happen, both build will be aware of the existence of the other one.
+def other_job_is_running?(uri, job, build_num)
+  response = Net::HTTP.get(uri)
+  builds = JSON.parse(response)
+
+  builds.any? do |build|
+    if build.dig("workflows", "job_name").to_s == job && build["build_num"].to_i < build_num
+      puts "Build #{build["build_num"].to_i} is already running the job #{build.dig("workflows", "job_name").to_s} on the same branch."
+      true
+    end
+  end
+end
+
+puts "Avoid neither concurrent #{options.job} for branch #{options.branch} nor deadlock happen."
+
+while other_job_is_running?(uri, options.job.to_s, options.build_number.to_i) do
+  puts "Sleep #{options.interval} seconds before a new check"
+  sleep(options.interval)
+end
