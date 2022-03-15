@@ -116,6 +116,7 @@ commands:
           command: |
             git config --global user.email "dev@jobteaser.com"
             git config --global user.name "Jobtomate CircleCI"
+            ssh-keyscan -H github.com >> ~/.ssh/known_hosts
       - run:
           name: "Tag the deployment"
           command: |
