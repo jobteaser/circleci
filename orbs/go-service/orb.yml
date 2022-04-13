@@ -61,10 +61,18 @@ jobs:
           command: |
             make vet
       - run:
+          name: "Create artifacts directory"
+          command: |
+            mkdir /tmp/artifacts
+      - run:
           name: "Run tests"
           command: |
             <<parameters.pre_test_command>>
             make test
+      - store_test_results:
+          path: /tmp/artifacts/
+      - store_artifacts:
+          path: /tmp/artifacts/
       - save_go_pkg_cache
 
   build:
