@@ -82,6 +82,10 @@ commands:
         description: "The tag of the image."
         type: string
         default: "git-$CIRCLE_SHA1"
+      optional:
+        description: "Even if trivy command fails, the step won't fail if optional is true"
+        type: boolean
+        default: true
     steps:
       - run:
           name: "Check the image with trivy"
@@ -90,7 +94,7 @@ commands:
               --no-progress \
               -f json \
               -o /tmp/trivy.json \
-              <<parameters.image_name>>:<<parameters.image_tag>>
+              <<parameters.image_name>>:<<parameters.image_tag>> || <<parameters.optional>>
       - store_artifacts:
           path: "/tmp/trivy.json"
 
