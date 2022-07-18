@@ -1,0 +1,15 @@
+phraseapp:
+  available_locales:
+    en
+    fr
+    de
+  push:
+    sources:
+      - file: ./config/locales/<locale_name>.yml
+        params:
+          file_format: yml
+  pull:
+    targets:
+      - file: ./config/locales/<locale_name>.yml
+        params:
+          file_format: yml

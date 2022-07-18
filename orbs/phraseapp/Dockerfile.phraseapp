@@ -1,0 +1,66 @@
+FROM jobteaser/circleci-docker-build:latest
+
+LABEL vendor="JobTeaser"
+LABEL maintainer="dev@jobteaser.com"
+
+ENV DEBIAN_FRONTEND noninteractive
+
+# For https://github.com/mimemagicrb/mimemagic
+ENV FREEDESKTOP_MIME_TYPES_PATH /usr/share/mime/packages/freedesktop.org.xml
+
+RUN apt-get update -y && \
+    apt-get upgrade -y && \
+    apt-get install -y \
+                    --no-install-recommends \
+                    autoconf \
+                    automake \
+                    bash \
+                    bison \
+                    ca-certificates \
+                    clang \
+                    curl \
+                    dpkg-dev \
+                    file \
+                    g++ \
+                    gnupg \
+                    imagemagick \
+                    libcurl4 \
+                    libffi-dev \
+                    libgdbm-dev \
+                    libglib2.0-0 \
+                    libmysqlclient-dev \
+                    libnspr4 \
+                    libnss3 \
+                    libpq-dev \
+                    libreadline-dev \
+                    libjemalloc-dev \
+                    libsass-dev \
+                    libsnappy-dev \
+                    libssl-dev \
+                    libx11-6 \
+                    make \
+                    openssh-client \
+                    shared-mime-info \
+                    tzdata \
+                    unzip \
+                    wget \
+                    zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/* && \
+    \
+    mkdir -p /usr/local/etc && \
+    { \
+      echo 'install: --no-document'; \
+      echo 'update: --no-document'; \
+    } >> /usr/local/etc/gemrc && \
+    ( \
+      curl -fLSs https://raw.githubusercontent.com/CircleCI-Public/circleci-cli/master/install.sh | bash && \
+      circleci update \
+    )
+
+RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+RUN chmod a+x /usr/local/bin/yq
+
+WORKDIR phraseapp
+
+COPY phraseapp/utils/autocreate-phraseapp-pr /bin/autocreate-phraseapp-pr
+COPY phraseapp/utils/automerge-phraseapp-pr /bin/automerge-phraseapp-pr

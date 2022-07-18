@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# This script creates a pull request on GitHub with updated locales from PhraseApp,
+# bypassing the need for human intervention via PhraseApp "GitHub Sync" feature.
+
+# Use circleci user
+git config --global user.email "dev@jobteaser.com"
+
+# Delete a phraseapp-locales branch if it exists
+echo "Deleting the phraseapp-locales branch if it exists..."
+git push origin --delete phraseapp-locales
+
+
+## Download the newest locale files from PhraseApp
+echo "Downloading the latest locale files from PhraseApp..."
+
+locales=($(yq e '.phraseapp.available_locales' .phraseapp.yml))
+pull_target_file_format=$(yq e '.phraseapp.pull.targets.0.params.file_format' .phraseapp.yml)
+pull_target_file_path=$(yq e '.phraseapp.pull.targets.0.file' .phraseapp.yml | sed s/"<locale_name>.*"//)
+
+for locale in "${locales[@]}"
+do
+  curl -H "Authorization: token $PHRASEAPP_ACCESS_TOKEN" \
+    "https://api.phrase.com/v2/projects/$PHRASEAPP_PROJECT_ID/locales/$locale/download?file_format=$pull_target_file_format" \
+    > "$pull_target_file_path""$locale"."$pull_target_file_format"
+done
+
+
+# if there are some changes, push them to GitHub and create a pull request
+git diff --exit-code
+
+if [[ $? == 0 ]]; then
+  echo "No locales have been changed."
+  exit 0
+else
+  git checkout -b phraseapp-locales
+  git add "$pull_target_file_path"
+  git commit -m "Updated translations from Phrase"
+  git push origin phraseapp-locales
+
+echo "Attempting to create a PhraseApp pull request with locale updates..."
+  response_code=$(curl -X POST \
+    -w "%{response_code}\n" --silent --output "/dev/null" \
+    -H "Authorization: token $GITHUB_PR_AUTOMATION_TOKEN" \
+    "https://api.github.com/repos/jobteaser/$CIRCLE_PROJECT_REPONAME/pulls" \
+    -d '{"title":"Updated translations from Phrase","body":"Exported the most recent locale files from Phrase.","head":"phraseapp-locales","base":"'"$CIRCLE_BRANCH"'"}'
+  )
+
+  echo "https://api.github.com/repos/jobteaser/$CIRCLE_PROJECT_REPONAME/pulls"
+  echo "GitHub responded with: $response_code"
+
+  if [[ $response_code != 201 ]]; then
+    echo "PhraseApp pull request could not have been created."
+    exit 1
+  fi
+
+  echo "PhraseApp pull request has been successfully created."
+fi

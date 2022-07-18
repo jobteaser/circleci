@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# This script merges the PhraseApp PR through GitHub API, bypassing the need for
+# developer approval and merging.
+
+if [[ -z $CIRCLE_PULL_REQUEST ]]; then
+  echo "Can't auto-merge a branch without a Pull Request. Please create a PR first."
+  exit 1
+fi
+
+pr_number=${CIRCLE_PULL_REQUEST##*/}
+merge_url="https://api.github.com/repos/jobteaser/$CIRCLE_PROJECT_REPONAME/pulls/$pr_number/merge"
+echo "Attempting to merge the PhraseApp pull request..."
+
+response_code=$(curl -X PUT \
+  -w "%{response_code}\n" --silent --output "/dev/null" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/vnd.github.v3+json" \
+  -H "User-Agent: jobteaser" \
+  -H "Authorization: token $GITHUB_PR_AUTOMATION_TOKEN" \
+  -d '{"merge_method":"squash"}' \
+  $merge_url
+)
+
+echo "GitHub responded with: $response_code"
+
+if [[ $response_code != 200 ]]; then
+  echo "PhraseApp pull request could not have been merged. See the documentation at https://developer.github.com/v3/pulls/#merge-a-pull-request-merge-button for debugging."
+  exit 1
+fi
+
+echo "PhraseApp pull request has been successfully merged."
+
