@@ -1,0 +1,12 @@
+# Example of configuration file
+
+phraseapp:
+  available_locales:
+    en
+    fr
+    de
+  pull:
+    targets:
+      - file: ./config/locales/
+        params:
+          file_format: yml
