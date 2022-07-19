@@ -7,7 +7,7 @@ orbs:
   service: "jobteaser/service@0.10.0"
 
 executors:
-  ci:
+  phraseapp:
     docker:
       - image: "jobteaser/circleci-phraseapp-phraseapp:0.0.0"
         auth:
