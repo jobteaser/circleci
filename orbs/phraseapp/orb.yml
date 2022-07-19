@@ -9,7 +9,7 @@ orbs:
 executors:
   phraseapp:
     docker:
-      - image: "jobteaser/circleci-phraseapp-phraseapp:0.0.0"
+      - image: "jobteaser/circleci-phraseapp-phraseapp:0.0.1"
         auth:
           username: "$DOCKER_LOGIN"
           password: "$DOCKER_PASSWORD"
@@ -34,14 +34,29 @@ commands:
           command: |
             automerge-phraseapp-pr
 
+  run-phraseapp-notify-automerge-failed:
+    steps:
+      - checkout
+      - service/configure_ssh
+      - run:
+          name: "Automatically notify if the auto-merge failed"
+          command: |
+            automerge-phraseapp-pr
+
 
 jobs:
   autocreate-phraseapp-pr:
-    executor: "ci"
+    executor: "phraseapp"
     steps:
       - run-phraseapp-autocreate
 
   automerge-phraseapp-pr:
-    executor: "ci"
+    executor: "phraseapp"
     steps:
       - run-phraseapp-automerge
+
+  notify-failed-automerge-phraseapp-pr:
+    executor: "phraseapp"
+    steps:
+      - run-phraseapp-notify-automerge-failed
+

@@ -1,3 +1,5 @@
+FROM phrase/phrase-cli:2.4.12 AS phrase
+
 FROM jobteaser/circleci-docker-build:latest
 
 LABEL vendor="JobTeaser"
@@ -57,8 +59,7 @@ RUN apt-get update -y && \
       circleci update \
     )
 
-RUN wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-RUN chmod a+x /usr/local/bin/yq
+COPY --from=phrase /usr/bin/phrase /usr/bin/phrase
 
 WORKDIR phraseapp
 

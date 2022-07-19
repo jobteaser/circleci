@@ -1,8 +1,6 @@
-phraseapp:
-  available_locales:
-    en
-    fr
-    de
+phrase:
+  project_id: PHRASEAPP_PROJECT_ID
+  access_token: PHRASEAPP_ACCESS_TOKEN
   push:
     sources:
       - file: ./config/locales/<locale_name>.yml

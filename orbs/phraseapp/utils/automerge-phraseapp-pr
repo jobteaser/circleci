@@ -8,15 +8,38 @@ if [[ -z $CIRCLE_PULL_REQUEST ]]; then
   exit 1
 fi
 
+switch_enforce_admins () {
+  http_method=$1
+  protection_url="https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_USERNAME/branches/$CIRCLE_PROJECT_REPONAME/protection/enforce_admins"
+
+  response_code=$(curl -X $http_method \
+    -w "%{response_code}\n" --silent --output "/dev/null" \
+    -H "Content-Type: application/json" \
+    -H "Accept: application/vnd.github.v3+json" \
+    -H "User-Agent: $CIRCLE_PROJECT_USERNAME" \
+    -H "Authorization: token $GITHUB_PR_AUTOMATION_TOKEN" \
+    $protection_url
+  )
+
+  if [[ $response_code != 200 && $response_code != 204 ]]; then
+    echo "Failed to switch enforce_admins protection on branch with $http_method."
+    exit 1
+  fi
+
+  echo "Switch enforce_admins protection on branch with $http_method."
+}
+
+switch_enforce_admins "DELETE"
+
 pr_number=${CIRCLE_PULL_REQUEST##*/}
-merge_url="https://api.github.com/repos/jobteaser/$CIRCLE_PROJECT_REPONAME/pulls/$pr_number/merge"
+merge_url="https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/pulls/$pr_number/merge"
 echo "Attempting to merge the PhraseApp pull request..."
 
 response_code=$(curl -X PUT \
   -w "%{response_code}\n" --silent --output "/dev/null" \
   -H "Content-Type: application/json" \
   -H "Accept: application/vnd.github.v3+json" \
-  -H "User-Agent: jobteaser" \
+  -H "User-Agent: $CIRCLE_PROJECT_USERNAME" \
   -H "Authorization: token $GITHUB_PR_AUTOMATION_TOKEN" \
   -d '{"merge_method":"squash"}' \
   $merge_url
@@ -30,4 +53,7 @@ if [[ $response_code != 200 ]]; then
 fi
 
 echo "PhraseApp pull request has been successfully merged."
+
+switch_enforce_admins "POST"
+
 
