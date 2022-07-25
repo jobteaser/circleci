@@ -10,13 +10,13 @@ git push origin --delete phraseapp-locales
 
 
 ## Update .phrase.yml file to use phrase-cli
-sed "s/PHRASEAPP_PROJECT_ID/${PHRASEAPP_PROJECT_ID}/" .phrase.sample.yml > .phrase.yml
-sed "s/PHRASEAPP_PROJECT_ID/${PHRASEAPP_ACCESS_TOKEN}/" .phrase.sample.yml > .phrase.yml
+sed -i.bak "s/PHRASEAPP_PROJECT_ID/$PHRASEAPP_PROJECT_ID/g" .phrase.yml
+sed -i.bak "s/PHRASEAPP_ACCESS_TOKEN/$PHRASEAPP_ACCESS_TOKEN/g" .phrase.yml
 
 
 ## Download the newest locale files from PhraseApp
 echo "Downloading the latest locale files from PhraseApp..."
-bin/phrase pull
+phrase pull
 
 
 # if there are some changes, push them to GitHub and create a pull request

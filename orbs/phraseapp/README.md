@@ -4,7 +4,7 @@
 This orb was created to make the merge of the changes made in the app.phrase with the GitHub project repository simple.
 
 ## Configuration Needed
-1) Add [phrase.sample.yml](.phrase.sample.yml) to the root of your project.
+1) Add [phrase.yml](.phrase.yml) to the root of your project.
 It will be used to know what locales we need to fetch from the app.phrase, the path to pull the changes and the format of the configuration file.
 
 - ruby projects:

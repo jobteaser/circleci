@@ -65,3 +65,4 @@ WORKDIR phraseapp
 
 COPY phraseapp/utils/autocreate-phraseapp-pr /bin/autocreate-phraseapp-pr
 COPY phraseapp/utils/automerge-phraseapp-pr /bin/automerge-phraseapp-pr
+COPY phraseapp/utils/notify-failed-automerge-phraseapp-pr /bin/notify-failed-automerge-phraseapp-pr

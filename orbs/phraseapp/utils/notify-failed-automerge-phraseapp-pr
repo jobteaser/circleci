@@ -13,5 +13,5 @@ if [[ $(($(date +%s) - $(git log -1 --format=%ct))) -gt 1800 ]]; then
 
   curl -X POST -H 'Content-type: application/json' \
        --data "{\"text\": \"$MESSAGE\"}" \
-       $NOTIFICATION_CHANNEL_URL
+       "$NOTIFICATION_CHANNEL_URL"
 fi
