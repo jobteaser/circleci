@@ -2,10 +2,10 @@
 # This script creates a pull request on GitHub with updated locales from PhraseApp,
 # bypassing the need for human intervention via PhraseApp "GitHub Sync" feature.
 
+git config --global user.email "$PHRASEAPP_USER_EMAIL"
 
 # Delete a phraseapp-locales branch if it exists
 echo "Deleting the phraseapp-locales branch if it exists..."
-git config --global user.email "$PHRASEAPP_USER_EMAIL"
 git push origin --delete phraseapp-locales
 
 
@@ -27,18 +27,19 @@ if [[ $? == 0 ]]; then
   exit 0
 else
   git checkout -b phraseapp-locales
+
   ## Add only the locale directory to the changes to be committed.
   git add "$(grep -A2 'pull:' .phrase.yml | tail -n1 | awk '{ print $3}' | sed s/"<locale_name>.*"//)"
   git commit -m "Updated translations from Phrase"
   git push origin phraseapp-locales
 
-echo "Attempting to create a PhraseApp pull request with locale updates..."
-  response_code=$(curl -X POST \
-    -w "%{response_code}\n" --silent --output "/dev/null" \
-    -H "Authorization: token $GITHUB_PR_AUTOMATION_TOKEN" \
-    "https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/pulls" \
-    -d '{"title":"Updated translations from Phrase","body":"Exported the most recent locale files from Phrase.","head":"phraseapp-locales","base":"'"$CIRCLE_BRANCH"'"}'
-  )
+  echo "Attempting to create a PhraseApp pull request with locale updates..."
+    response_code=$(curl -X POST \
+      -w "%{response_code}\n" --silent --output "/dev/null" \
+      -H "Authorization: token $GITHUB_PR_AUTOMATION_TOKEN" \
+      "https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/pulls" \
+      -d '{"title":"Updated translations from Phrase","body":"Exported the most recent locale files from Phrase.","head":"phraseapp-locales","base":"'"$CIRCLE_BRANCH"'"}'
+    )
 
   echo "https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/pulls"
   echo "GitHub responded with: $response_code"

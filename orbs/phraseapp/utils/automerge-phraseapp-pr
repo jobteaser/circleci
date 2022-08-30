@@ -48,7 +48,7 @@ response_code=$(curl -X PUT \
 echo "GitHub responded with: $response_code"
 
 if [[ $response_code != 200 ]]; then
-  echo "PhraseApp pull request could not have been merged. See the documentation at https://developer.github.com/v3/pulls/#merge-a-pull-request-merge-button for debugging."
+  echo "PhraseApp pull request cannot be merged. See the documentation at https://developer.github.com/v3/pulls/#merge-a-pull-request-merge-button for debugging."
   exit 1
 fi
 
