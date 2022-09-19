@@ -6,7 +6,7 @@ description: |
 executors:
   default:
     docker:
-      - image: "jobteaser/node"
+      - image: "jobteaser/node:latest"
         auth:
           username: "$DOCKER_LOGIN"
           password: "$DOCKER_PASSWORD"
