@@ -1,0 +1,134 @@
+version: 2.1
+
+description: |
+  Create Echoes 'release' using Echoes API, for Git repositories.
+
+executors:
+  default:
+    docker:
+      - image: "jobteaser/node:latest"
+        auth:
+          username: "$DOCKER_LOGIN"
+          password: "$DOCKER_PASSWORD"
+
+commands:
+  setup_env_vars:
+    description: "Initialize the environment variables that will be used in other jobs & steps."
+    steps:
+      - run:
+          name: "Setup environment variables"
+          command: |
+            echo 'export ECHOES_API_ENDPOINT="https://api.echoeshq.com/v1/signals/releases"' >> "$BASH_ENV"
+            echo 'export API_KEY="$ECHOESHQ_API_KEY"' >> "$BASH_ENV"
+            HEAD_COMMIT=$CIRCLE_SHA1
+            echo "export HEAD_COMMIT=$CIRCLE_SHA1" >> "$BASH_ENV"
+            # get the 2 latest tags
+            TAGS=( $(git describe --abbrev=0 --tags $(git rev-list --tags --max-count=2)) )
+            if [ "$CIRCLE_TAG" = "" ]; then
+              PREV_TAG=${TAGS[0]}
+            else
+              PREV_TAG=${TAGS[1]}
+            fi
+            echo "export ISO_DATE=$(node -e "console.log(new Date())")" >> "$BASH_ENV"
+            echo "export COMMIT_URL=\"https://github.com/jobteaser/$CIRCLE_PROJECT_REPONAME/commit/$HEAD_COMMIT\"" >> "$BASH_ENV"
+            RELEASE_COMMITS=$(git log --pretty=format:%H "${PREV_TAG}".."$HEAD_COMMIT")
+            echo "export COMMITS_JSON='$(node -e "console.log(JSON.stringify(process.argv.slice(1)))" $RELEASE_COMMITS)'" >> "$BASH_ENV"
+            echo "export DELIVERABLES_JSON=\"[\\\"$CIRCLE_PROJECT_REPONAME\\\"]\"" >> "$BASH_ENV"
+            echo "export RELEASE_NAME=\"$CIRCLE_PROJECT_REPONAME ${HEAD_COMMIT:0:16}\"" >> "$BASH_ENV"
+
+  create_release:
+    description: "Create release using Echoes API."
+    steps:
+      - run:
+          name: "Create release"
+          command: |
+            DO_RELEASE_CREATION=true
+
+            if test -f "initial-workflow-id.txt"; then
+              echo "Found initial-workflow-id.txt."
+              INITIAL_WORKFLOW_ID=$(cat initial-workflow-id.txt)
+
+              # If the current workflow is a re-run of another one, reuse initial release name
+              if [ "$INITIAL_WORKFLOW_ID" != "$CIRCLE_WORKFLOW_ID" ]; then
+                RELEASE_NAME=$(cat release-name.txt)
+                echo "Initial workflow ID ($INITIAL_WORKFLOW_ID) differs from current workflow ID ($CIRCLE_WORKFLOW_ID), create new release with initial release name: $RELEASE_NAME."
+              else
+                echo "Initial workflow ID ($INITIAL_WORKFLOW_ID) is the same as the current workflow ID ($CIRCLE_WORKFLOW_ID), do NOT create a new release."
+                DO_RELEASE_CREATION=false
+              fi
+            fi
+
+            if [ "$DO_RELEASE_CREATION" = "true" ]; then
+              echo "Create release..."
+              curl --silent --show-error --fail --location --request POST $ECHOES_API_ENDPOINT \
+                --header 'Content-Type: application/json' \
+                --header "Authorization: Bearer $API_KEY" \
+                --data-raw '{
+                    "name": "'"$RELEASE_NAME"'",
+                    "commits": '"$COMMITS_JSON"',
+                    "date": "'"$ISO_DATE"'",
+                    "version": "'"$HEAD_COMMIT"'",
+                    "deliverables": '"$DELIVERABLES_JSON"',
+                    "url": "'"$COMMIT_URL"'"
+                }' > echoes-release.json
+              echo "Echoes release infos:"
+              cat echoes-release.json
+            fi
+
+
+  persist_release_info:
+    description: "Persist release info & workflow id for later jobs."
+    steps:
+      - run:
+          name: "Save current release infos"
+          command: |
+            echo $CIRCLE_WORKFLOW_ID > initial-workflow-id.txt
+            echo $RELEASE_NAME > release-name.txt
+
+  set_release_status:
+    description: "Set status for a given release ID."
+    parameters:
+      status:
+        description: "The release status."
+        type: string
+        default: "success"
+    steps:
+      - run:
+          name: "Set release status"
+          command: |
+            curl --location --request PATCH $ECHOES_API_ENDPOINT/$RELEASE_ID \
+              --header 'Accept: application/json' \
+              --header "Authorization: Bearer ${API_KEY}" \
+              --data-raw '{
+                  "status": "<<parameters.status>>"
+              }'
+
+jobs:
+  on-deployment-workflow-start:
+    executor: "default"
+    steps:
+      - checkout
+      - setup_env_vars
+      - create_release
+      - persist_release_info
+      - set_release_status:
+          status: "failure"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - echoes-release.json
+            - initial-workflow-id.txt
+            - release-name.txt
+
+  on-deployment-success:
+    executor: "default"
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - setup_env_vars
+      # "create_release" below will only create a release if the workflow previoulsy failed,
+      # to avoid overriding failed status of the initial release.
+      - create_release
+      - set_release_status:
+          status: "success"
