@@ -28,7 +28,7 @@ commands:
             HEAD_COMMIT=$CIRCLE_SHA1
             echo "export HEAD_COMMIT=$CIRCLE_SHA1" >> "$BASH_ENV"
             # get the 2 latest tags
-            TAGS=( $(git describe --abbrev=0 --tags $(git rev-list --tags --max-count=2)) )
+            TAGS=( $(git describe --always --abbrev=0 --tags $(git rev-list --tags --max-count=2)) )
             PREV_TAG=${TAGS[0]}
             COMMIT_FROM_TAG=$(git rev-list -n 1 $PREV_TAG)
             if [ "$COMMIT_FROM_TAG" = "$HEAD_COMMIT" ]; then
