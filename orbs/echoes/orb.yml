@@ -24,9 +24,9 @@ commands:
             echo "export HEAD_COMMIT=$CIRCLE_SHA1" >> "$BASH_ENV"
             # get the 2 latest tags
             TAGS=( $(git describe --abbrev=0 --tags $(git rev-list --tags --max-count=2)) )
-            if [ "$CIRCLE_TAG" = "" ]; then
-              PREV_TAG=${TAGS[0]}
-            else
+            PREV_TAG=${TAGS[0]}
+            COMMIT_FROM_TAG=$(git rev-list -n 1 $PREV_TAG)
+            if [ "$COMMIT_FROM_TAG" = "$HEAD_COMMIT" ]; then
               PREV_TAG=${TAGS[1]}
             fi
             echo "export ISO_DATE=$(node -e "console.log(new Date())")" >> "$BASH_ENV"
@@ -70,7 +70,9 @@ commands:
                     "version": "'"$HEAD_COMMIT"'",
                     "deliverables": '"$DELIVERABLES_JSON"',
                     "url": "'"$COMMIT_URL"'"
-                }' > echoes-release.json
+                }' > result.json
+              # Lines below are only executed if the above curl succeeds
+              cp result.json echoes-release.json
               echo "Echoes release infos:"
               cat echoes-release.json
             fi
@@ -96,6 +98,7 @@ commands:
       - run:
           name: "Set release status"
           command: |
+            RELEASE_ID=$(node -e "console.log(require('./echoes-release.json').id)")
             curl --location --request PATCH $ECHOES_API_ENDPOINT/$RELEASE_ID \
               --header 'Accept: application/json' \
               --header "Authorization: Bearer ${API_KEY}" \
