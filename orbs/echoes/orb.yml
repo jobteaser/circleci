@@ -105,6 +105,7 @@ commands:
           command: |
             RELEASE_ID=$(node -e "console.log(require('./echoes-release.json').id)")
             curl --location --request PATCH $ECHOES_API_ENDPOINT/$RELEASE_ID \
+              --header 'Content-Type: application/json' \
               --header 'Accept: application/json' \
               --header "Authorization: Bearer ${API_KEY}" \
               --data-raw '{
