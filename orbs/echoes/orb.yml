@@ -18,6 +18,11 @@ commands:
       - run:
           name: "Setup environment variables"
           command: |
+            if [ "$(git tag --list)" = "" ]; then
+              echo "ERROR: No tags found."
+              echo "The present orb requires the repository to have tags in order to determine the release commits."
+              exit 1
+            fi
             echo 'export ECHOES_API_ENDPOINT="https://api.echoeshq.com/v1/signals/releases"' >> "$BASH_ENV"
             echo 'export API_KEY="$ECHOESHQ_API_KEY"' >> "$BASH_ENV"
             HEAD_COMMIT=$CIRCLE_SHA1
