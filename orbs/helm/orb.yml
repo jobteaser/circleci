@@ -147,7 +147,10 @@ jobs:
         default: "./k8s/$CIRCLE_PROJECT_REPONAME"
     executor: "deploy"
     steps:
-      - checkout
+      - run:
+          name: "Checkout K8S"
+          command: |
+            git clone -b $CIRCLE_BRANCH --depth 1 --filter=blob:none --sparse $CIRCLE_REPOSITORY_URL . && git sparse-checkout set k8s
       - run:
           name: "Push Helm chart to remote repo"
           command: |
