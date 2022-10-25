@@ -113,15 +113,13 @@ commands:
           name: "Push the image to the remote registry."
           command: |
             docker tag <<parameters.image_name>>:<<parameters.image_tag>> $HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>>
-            docker push <<parameters.image_name>>:<<parameters.image_tag>>
-            docker push $HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>> || echo "Not able to push on $HARBOR_HOSTNAME"
+            echo -e <<parameters.image_name>>:<<parameters.image_tag>>\n$HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>> | xargs -n 1 -P 2 docker push
             if [ "$CIRCLE_BRANCH" = "<<parameters.push_latest_on>>" ]; then
               docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
                          <<parameters.image_name>>:latest
               docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
                          $HARBOR_HOSTNAME/<<parameters.image_name>>:latest
-              docker push <<parameters.image_name>>:latest
-              docker push $HARBOR_HOSTNAME/<<parameters.image_name>>:latest || echo "Not able to push on $HARBOR_HOSTNAME"
+              echo -e <<parameters.image_name>>:latest\n$HARBOR_HOSTNAME/<<parameters.image_name>>:latest | xargs -n 1 -P 2 docker push
             fi
 
 jobs:
