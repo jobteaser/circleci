@@ -1,0 +1,229 @@
+---
+version: 2.1
+
+description: |
+  Use Docker in your workflows.
+
+executors:
+  build:
+    docker:
+      - image: "jobteaser/circleci-docker-build:latest"
+        auth:
+          username: "$DOCKER_LOGIN"
+          password: "$DOCKER_PASSWORD"
+
+commands:
+  setup:
+    parameters:
+    steps:
+      - setup_remote_docker:
+          docker_layer_caching: true
+          version: "18.09.3"
+
+  login:
+    steps:
+      - run:
+          name: "Login on the remote registry."
+          command: |
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_LOGIN" --password-stdin
+            echo "$HARBOR_PASSWORD" | docker login "$HARBOR_HOSTNAME" -u "$HARBOR_LOGIN" --password-stdin || echo "Not able to login on $HARBOR_HOSTNAME"
+
+  build_image:
+    parameters:
+      dockerfile_path:
+        description: "The path of the dockerfile to build."
+        type: string
+        default: "Dockerfile"
+      dockerfile_directory:
+        description: "The directory to use to build image."
+        type: string
+        default: "."
+      image_name:
+        description: "The name of the image."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      image_tag:
+        description: "The tag of the image."
+        type: string
+        default: "git-$CIRCLE_SHA1"
+      tag_latest:
+        description: |
+          NO LONGER USED (only here for backward compatibility)
+
+          Please remove from your CI workflow
+        type: boolean
+        default: false
+      tag_latest_on:
+        description: |
+          NO LONGER USED (only here for backward compatibility)
+
+          Please remove from your CI workflow
+        type: string
+        default: "master"
+    steps:
+      - run:
+          name: "Build the image."
+          command: |
+            docker build --no-cache -t <<parameters.image_name>>:<<parameters.image_tag>> \
+                         --label org.opencontainers.image.vendor=JobTeaser \
+                         --label org.opencontainers.image.url=https://github.com/jobteaser/$CIRCLE_PROJECT_REPONAME \
+                         --label org.opencontainers.image.revision=$CIRCLE_SHA1 \
+                         -f <<parameters.dockerfile_path>> \
+                         --pull \
+                         <<parameters.dockerfile_directory>>
+
+  check_image_trivy:
+    parameters:
+      image_name:
+        description: "The name of the image."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      image_tag:
+        description: "The tag of the image."
+        type: string
+        default: "git-$CIRCLE_SHA1"
+    steps:
+      - run:
+          name: "Check the image with trivy"
+          command: |
+            GITHUB_TOKEN=$TRIVY_GITHUB_TOKEN trivy image \
+              --no-progress \
+              -f json \
+              -o /tmp/trivy.json \
+              <<parameters.image_name>>:<<parameters.image_tag>>
+      - store_artifacts:
+          path: "/tmp/trivy.json"
+
+  push_image_dockerio:
+    parameters:
+      image_name:
+        description: "The name of the image."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      image_tag:
+        description: "The tag of the image."
+        type: string
+        default: "git-$CIRCLE_SHA1"
+      push_latest_on:
+        description: "Push the image with the 'latest' tag on specific Git branch."
+        type: string
+        default: "master"
+    steps:
+      - run:
+          name: "Push the image to DockerIO."
+          command: |
+            docker push <<parameters.image_name>>:<<parameters.image_tag>>
+            if [ "$CIRCLE_BRANCH" = "<<parameters.push_latest_on>>" ]; then
+              docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
+                         <<parameters.image_name>>:latest
+              docker push <<parameters.image_name>>:latest
+            fi
+  push_image_harbor:
+    parameters:
+      image_name:
+        description: "The name of the image."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      image_tag:
+        description: "The tag of the image."
+        type: string
+        default: "git-$CIRCLE_SHA1"
+      push_latest_on:
+        description: "Push the image with the 'latest' tag on specific Git branch."
+        type: string
+        default: "master"
+    steps:
+      - run:
+          name: "Push the image to Harbor."
+          command: |
+            docker tag <<parameters.image_name>>:<<parameters.image_tag>> $HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>>
+            docker push $HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>> || echo "Not able to push on $HARBOR_HOSTNAME"
+            if [ "$CIRCLE_BRANCH" = "<<parameters.push_latest_on>>" ]; then
+              docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
+                         $HARBOR_HOSTNAME/<<parameters.image_name>>:latest
+              docker push $HARBOR_HOSTNAME/<<parameters.image_name>>:latest || echo "Not able to push on $HARBOR_HOSTNAME"
+            fi
+jobs:
+  build_image:
+    parameters:
+      dockerfile_path:
+        description: "The path of the dockerfile to build."
+        type: string
+        default: "Dockerfile"
+      dockerfile_directory:
+        description: "The directory to use to build image."
+        type: string
+        default: "."
+      image_name:
+        description: "The name of the Docker image."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      image_tag:
+        description: "The tag of the Docker image."
+        type: string
+        default: "git-$CIRCLE_SHA1"
+    executor: "build"
+    steps:
+      - checkout
+      - setup
+      - login
+      - build_image:
+          dockerfile_path: "<<parameters.dockerfile_path>>"
+          dockerfile_directory: "<<parameters.dockerfile_directory>>"
+          image_name: "<<parameters.image_name>>"
+          image_tag: "<<parameters.image_tag>>"
+      - check_image_trivy:
+          image_name: "<<parameters.image_name>>"
+          image_tag: "<<parameters.image_tag>>"
+  push_image_dockerio:
+    parameters:
+      image_name:
+        description: "The name of the Docker image."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      image_tag:
+        description: "The tag of the Docker image."
+        type: string
+        default: "git-$CIRCLE_SHA1"
+      tag_latest:
+        description: |
+          NO LONGER USED (only here for backward compatibility)
+          Please remove from your CI workflow
+        type: boolean
+        default: false
+      tag_latest_on:
+        description: "Tag the image with the 'latest' tag on specific Git branch."
+        type: string
+        default: "master"
+    executor: "build"
+    steps:
+      - push_image:
+          image_name: "<<parameters.image_name>>"
+          image_tag: "<<parameters.image_tag>>"
+          push_latest_on: <<parameters.tag_latest_on>>
+  push_image_harbor:
+    parameters:
+      image_name:
+        description: "The name of the Docker image."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      image_tag:
+        description: "The tag of the Docker image."
+        type: string
+        default: "git-$CIRCLE_SHA1"
+      tag_latest:
+        description: |
+          NO LONGER USED (only here for backward compatibility)
+          Please remove from your CI workflow
+        type: boolean
+        default: false
+      tag_latest_on:
+        description: "Tag the image with the 'latest' tag on specific Git branch."
+        type: string
+        default: "master"
+    executor: "build"
+    steps:
+      - push_image:
+          image_name: "<<parameters.image_name>>"
+          image_tag: "<<parameters.image_tag>>"
+          push_latest_on: <<parameters.tag_latest_on>>
