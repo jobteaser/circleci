@@ -46,25 +46,11 @@ commands:
         description: "The tag of the image."
         type: string
         default: "git-$CIRCLE_SHA1"
-      tag_latest:
-        description: |
-          NO LONGER USED (only here for backward compatibility)
-
-          Please remove from your CI workflow
-        type: boolean
-        default: false
-      tag_latest_on:
-        description: |
-          NO LONGER USED (only here for backward compatibility)
-
-          Please remove from your CI workflow
-        type: string
-        default: "master"
     steps:
       - run:
           name: "Build the image."
           command: |
-            docker build -t <<parameters.image_name>>:<<parameters.image_tag>> \
+            docker build --no-cache -t <<parameters.image_name>>:<<parameters.image_tag>> \
                          --label org.opencontainers.image.vendor=JobTeaser \
                          --label org.opencontainers.image.url=https://github.com/jobteaser/$CIRCLE_PROJECT_REPONAME \
                          --label org.opencontainers.image.revision=$CIRCLE_SHA1 \
@@ -94,7 +80,7 @@ commands:
       - store_artifacts:
           path: "/tmp/trivy.json"
 
-  push_image:
+  push_image_dockerio:
     parameters:
       image_name:
         description: "The name of the image."
@@ -110,20 +96,39 @@ commands:
         default: "master"
     steps:
       - run:
-          name: "Push the image to the remote registry."
+          name: "Push the image to DockerIO."
           command: |
-            docker tag <<parameters.image_name>>:<<parameters.image_tag>> $HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>>
             docker push <<parameters.image_name>>:<<parameters.image_tag>>
-            docker push $HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>> || echo "Not able to push on $HARBOR_HOSTNAME"
             if [ "$CIRCLE_BRANCH" = "<<parameters.push_latest_on>>" ]; then
               docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
                          <<parameters.image_name>>:latest
+              docker push <<parameters.image_name>>:latest
+            fi
+  push_image_harbor:
+    parameters:
+      image_name:
+        description: "The name of the image."
+        type: string
+        default: "jobteaser/$CIRCLE_PROJECT_REPONAME"
+      image_tag:
+        description: "The tag of the image."
+        type: string
+        default: "git-$CIRCLE_SHA1"
+      push_latest_on:
+        description: "Push the image with the 'latest' tag on specific Git branch."
+        type: string
+        default: "master"
+    steps:
+      - run:
+          name: "Push the image to Harbor."
+          command: |
+            docker tag <<parameters.image_name>>:<<parameters.image_tag>> $HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>>
+            docker push $HARBOR_HOSTNAME/<<parameters.image_name>>:<<parameters.image_tag>> || echo "Not able to push on $HARBOR_HOSTNAME"
+            if [ "$CIRCLE_BRANCH" = "<<parameters.push_latest_on>>" ]; then
               docker tag <<parameters.image_name>>:<<parameters.image_tag>> \
                          $HARBOR_HOSTNAME/<<parameters.image_name>>:latest
-              docker push <<parameters.image_name>>:latest
               docker push $HARBOR_HOSTNAME/<<parameters.image_name>>:latest || echo "Not able to push on $HARBOR_HOSTNAME"
             fi
-
 jobs:
   build_image:
     parameters:
@@ -143,13 +148,6 @@ jobs:
         description: "The tag of the Docker image."
         type: string
         default: "git-$CIRCLE_SHA1"
-      tag_latest:
-        description: |
-          NO LONGER USED (only here for backward compatibility)
-
-          Please remove from your CI workflow
-        type: boolean
-        default: false
       tag_latest_on:
         description: "Tag the image with the 'latest' tag on specific Git branch."
         type: string
@@ -167,7 +165,11 @@ jobs:
       - check_image_trivy:
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
-      - push_image:
+      - push_image_dockerio:
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
-          push_latest_on: <<parameters.tag_latest_on>>
+          push_latest_on: "<<parameters.tag_latest_on>>"
+      - push_image_harbor:
+          image_name: "<<parameters.image_name>>"
+          image_tag: "<<parameters.image_tag>>"
+          push_latest_on: "<<parameters.tag_latest_on>>"

@@ -145,7 +145,12 @@ jobs:
         default: "./k8s/$CIRCLE_PROJECT_REPONAME"
     executor: "deploy"
     steps:
-      - checkout
+      - run:
+          name: "Checkout K8S files."
+          command: |
+            git clone -b $CIRCLE_BRANCH --depth 1 --filter=blob:none \
+            --sparse $CIRCLE_REPOSITORY_URL . \
+            && git sparse-checkout set k8s
       - run:
           name: "Push Helm chart to remote repo"
           command: |
@@ -241,7 +246,12 @@ jobs:
                 name: "Wait for all other builds to complete"
                 command: |
                   circle-wait-job
-      - checkout
+      - run:
+          name: "Checkout K8S files."
+          command: |
+            git clone -b $CIRCLE_BRANCH --depth 1 --filter=blob:none \
+            --sparse $CIRCLE_REPOSITORY_URL . \
+            && git sparse-checkout set k8s 
       - run:
           name: "Ensure that this build is more recent than the last deployed one"
           command: |
