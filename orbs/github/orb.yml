@@ -37,3 +37,51 @@ commands:
             tag="deployment-<<parameters.environment>>-$(date -u +'%Y%m%d%H%M%S%N')"
             git tag $tag
             git push origin $tag
+
+  set_admin_merge_restriction:
+    description: "Enable or disable admin merge restriction for given repository"
+    parameters:
+      api_token:
+        description: "The github api token allowing the operation."
+        type: string
+        default: ""
+      branch:
+        description: "The branch name."
+        type: string
+        default: "master"
+      enable:
+        description: "Enable admin merge restriction with true, disable it with false."
+        type: boolean
+        default: true
+      organization:
+        description: "Github organization name."
+        type: string
+        default: ""
+      repository:
+        description: "The repository name."
+        type: string
+        default: $CIRCLE_PROJECT_REPONAME
+    steps:
+      - run:
+          name: "Set admin merge restriction"
+          command: |
+            if [ "<<parameters.enable>>" = "true" ]; then
+              http_method="POST"
+            else
+              http_method="DELETE"
+            fi
+            protection_url="https://api.github.com/repos/<<parameters.organization>>/<<parameters.repository>>/branches/<<parameters.branch>>/protection/enforce_admins"
+
+            response_code=$(curl -X $http_method \
+              -w "%{response_code}\n" --silent --output "/dev/null" \
+              -H "Content-Type: application/json" \
+              -H "Accept: application/vnd.github.v3+json" \
+              -H "User-Agent: jobteaser" \
+              -H "Authorization: token <<parameters.api_token>>" \
+              $protection_url
+            )
+
+            if [[ $response_code != 200 && $response_code != 204 ]]; then
+              echo "Failed to switch enforce_admins protection on '<<parameters.organization>>/<<parameters.repository>>/branches/<<parameters.branch>>' with $http_method."
+              exit 1
+            fi
