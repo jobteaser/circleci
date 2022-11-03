@@ -30,3 +30,4 @@ RUN apt-get update -y && \
       wget apt-transport-https gnupg && \
     apt-get autoremove -y && \
     apt-get clean -y
+RUN trivy image --download-db-only
