@@ -95,6 +95,18 @@ commands:
       - store_artifacts:
           path: "/tmp/trivy.json"
 
+  check_fs_trivy:
+    steps:
+      - run:
+          name: "Check the image with trivy"
+          command: |
+            trivy filesystem \
+              -f json \
+              -o /tmp/trivy.json 
+              .
+      - store_artifacts:
+          path: "/tmp/trivy.json"
+
   push_image:
     parameters:
       image_name:
@@ -166,6 +178,7 @@ jobs:
       - check_image_trivy:
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
+      - check_fs_trivy
       - push_image:
           image_name: "<<parameters.image_name>>"
           image_tag: "<<parameters.image_tag>>"
