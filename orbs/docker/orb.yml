@@ -98,11 +98,19 @@ commands:
   check_fs_trivy:
     steps:
       - run:
+<<<<<<< HEAD
           name: "Check the image with trivy"
           command: |
             trivy filesystem \
               -f json \
               -o /tmp/trivy.json 
+=======
+          name: "Check the files with trivy"
+          command: |
+            trivy filesystem \
+              -f json \
+              -o /tmp/trivy.json \
+>>>>>>> 49432ef (feat(docker): add check fs trivy)
               .
       - store_artifacts:
           path: "/tmp/trivy.json"
