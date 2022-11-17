@@ -295,6 +295,7 @@ jobs:
               --set=image=<<parameters.docker_image>>:<<parameters.docker_tag>> \
               --wait=<<parameters.helm_wait_for_ready>> \
               --timeout=<<parameters.helm_upgrade_timeout>>s \
+              --debug \
               --install
       - run:
           name: "Install or upgrade the Helm release"
@@ -309,6 +310,7 @@ jobs:
               --set=image=<<parameters.docker_image>>:<<parameters.docker_tag>> \
               --wait=<<parameters.helm_wait_for_ready>> \
               --timeout=<<parameters.helm_upgrade_timeout>>s \
+              --debug \
               --install
       - when:
           condition: <<parameters.tag_deployment>>
