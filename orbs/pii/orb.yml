@@ -1,0 +1,117 @@
+version: 2.1
+
+description: |
+  Run pii tests from privacy and e2e_jt_test repositories
+
+orbs:
+  service: "jobteaser/service@0.10.0"
+  browser-tools: circleci/browser-tools@1.4.0
+
+executors:
+  xlarge:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    resource_class: "xlarge"
+    docker:
+      - image: "cimg/node:19.1.0-browsers"
+        environment:
+          DEBUG: "trace"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          FORCE_COLOR: "0"
+  large:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    resource_class: "large"
+    docker:
+      - image: "cimg/node:19.1.0-browsers"
+        environment:
+          DEBUG: "trace"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          FORCE_COLOR: "0"
+  medium:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    docker:
+      - image: "cimg/node:19.1.0-browsers"
+        environment:
+          DEBUG: "trace"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          FORCE_COLOR: "0"
+  small:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    resource_class: "small"
+    docker:
+      - image: "cimg/node:19.1.0-browsers"
+        environment:
+          DEBUG: "trace"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          FORCE_COLOR: "0"
+
+commands:
+  clone_e2e_jt_tests:
+    description: "Clone e2e_jt_tests repository"
+    steps:
+      - run:
+          name: "Clone e2e_jt_tests repository"
+          command: |
+            git clone -b master git@github.com:jobteaser/e2e_jt_tests.git
+  clone_privacy:
+    description: "Clone privacy repository"
+    steps:
+      - run:
+          name: "Clone privacy repository"
+          command: |
+            git clone -b master git@github.com:jobteaser/privacy.git
+  manage_dependencies_e2e_jt_tests:
+    description: "Cache management for dependencies on repo e2e_jt_tests"
+    steps:
+      - restore_cache:
+          key: npm-dep-{{ .Branch }}-{{ checksum "e2e_jt_tests/package-lock.json" }}
+      - run:
+          working_directory: e2e_jt_tests
+          name: "Install dependencies on repo e2e_jt_tests"
+          command: |
+            npm i
+      - save_cache:
+          key: npm-dep-{{ .Branch }}-{{ checksum "e2e_jt_tests/package-lock.json" }}
+          paths:
+            - ./e2e_jt_tests/node_modules
+  manage_dependencies_privacy:
+    description: "Cache management for dependencies on repo privacy"
+    steps:
+      - restore_cache:
+          key: npm-dep-{{ .Branch }}-{{ checksum "privacy/package-lock.json" }}
+      - run:
+          working_directory: privacy
+          name: "Install dependencies on repo privacy"
+          command: |
+            npm i
+      - save_cache:
+          key: npm-dep-{{ .Branch }}-{{ checksum "privacy/package-lock.json" }}
+          paths:
+            - ./privacy/node_modules
+
+jobs:
+  execute_pii_tests:
+    parameters:
+      service:
+        type: string
+        default: ""
+      executor_type:
+        type: executor
+        default: "large"
+    executor: "<< parameters.executor_type >>"
+    steps:
+      - clone_e2e_jt_tests
+      - clone_privacy
+      - manage_dependencies_e2e_jt_tests
+      - manage_dependencies_privacy
