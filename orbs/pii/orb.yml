@@ -110,7 +110,6 @@ jobs:
         type: executor
         default: "large"
     executor: "<< parameters.executor_type >>"
-    name: "Run PII tests on service << parameters.service >>"
     steps:
       - service/configure_ssh
       - clone_e2e_jt_tests
