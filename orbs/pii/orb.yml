@@ -106,6 +106,15 @@ commands:
           paths:
             - ~/project/privacy/tests/node_modules
 
+  build_privacy:
+    description: "Build privacy service"
+    steps:
+      - run:
+          command: |
+            make install
+            make build
+          working_directory: "~/project/privacy"
+
   setup_env:
     description: "Setup environment for PII testing"
     steps:
@@ -263,6 +272,7 @@ jobs:
       - clone_privacy
       - manage_dependencies_e2e_jt_tests
       - manage_dependencies_privacy
+      - build_privacy
       - browser-tools/install-chrome
       - browser-tools/install-chromedriver
       - setup_env
