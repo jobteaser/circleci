@@ -81,14 +81,14 @@ commands:
     description: "Cache management for dependencies on repo e2e_jt_tests"
     steps:
       - restore_cache:
-          key: npm-dep-{{ .Branch }}-{{ checksum "e2e_jt_tests/package-lock.json" }}
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/e2e_jt_tests/package-lock.json" }}
       - run:
           name: "Install dependencies on repo e2e_jt_tests"
           command: |
             npm i
           working_directory: "~/project/e2e_jt_tests"
       - save_cache:
-          key: npm-dep-{{ .Branch }}-{{ checksum "e2e_jt_tests/package-lock.json" }}
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/e2e_jt_tests/package-lock.json" }}
           paths:
             - ~/project/e2e_jt_tests/node_modules
             
@@ -96,14 +96,14 @@ commands:
     description: "Cache management for dependencies on repo privacy"
     steps:
       - restore_cache:
-          key: npm-dep-{{ .Branch }}-{{ checksum "privacy/package-lock.json" }}
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/privacy/package-lock.json" }}
       - run:
           name: "Install dependencies on repo privacy"
           command: |
             npm i
           working_directory: "~/project/privacy"
       - save_cache:
-          key: npm-dep-{{ .Branch }}-{{ checksum "privacy/package-lock.json" }}
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/privacy/package-lock.json" }}
           paths:
             - ~/project/privacy/node_modules
 
