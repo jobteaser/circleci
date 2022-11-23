@@ -112,6 +112,7 @@ jobs:
     executor: "<< parameters.executor_type >>"
     name: "Run PII tests on service << parameters.service >>"
     steps:
+      - service/configure_ssh
       - clone_e2e_jt_tests
       - clone_privacy
       - manage_dependencies_e2e_jt_tests
