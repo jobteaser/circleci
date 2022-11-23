@@ -65,6 +65,8 @@ commands:
           command: |
             git clone -b master git@github.com:jobteaser/e2e_jt_tests.git
             ls -al
+          working_directory: "~/project"
+
   clone_privacy:
     description: "Clone privacy repository"
     steps:
@@ -73,34 +75,36 @@ commands:
           command: |
             git clone -b master git@github.com:jobteaser/privacy.git
             ls -al
+          working_directory: "~/project"
+
  manage_dependencies_e2e_jt_tests:
     description: "Cache management for dependencies on repo e2e_jt_tests"
     steps:
       - restore_cache:
           key: npm-dep-{{ .Branch }}-{{ checksum "e2e_jt_tests/package-lock.json" }}
       - run:
-          working_directory: e2e_jt_tests
           name: "Install dependencies on repo e2e_jt_tests"
           command: |
             npm i
+          working_directory: "~/project/e2e_jt_tests"
       - save_cache:
           key: npm-dep-{{ .Branch }}-{{ checksum "e2e_jt_tests/package-lock.json" }}
           paths:
-            - ./e2e_jt_tests/node_modules
+            - ~/project/e2e_jt_tests/node_modules
   manage_dependencies_privacy:
     description: "Cache management for dependencies on repo privacy"
     steps:
       - restore_cache:
           key: npm-dep-{{ .Branch }}-{{ checksum "privacy/package-lock.json" }}
       - run:
-          working_directory: privacy
           name: "Install dependencies on repo privacy"
           command: |
             npm i
+          working_directory: "~/project/privacy"
       - save_cache:
           key: npm-dep-{{ .Branch }}-{{ checksum "privacy/package-lock.json" }}
           paths:
-            - ./privacy/node_modules
+            - ~/project/privacy/node_modules
 
 jobs:
   execute_pii_tests:
