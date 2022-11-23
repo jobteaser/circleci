@@ -6,6 +6,7 @@ description: |
 orbs:
   service: "jobteaser/service@0.10.0"
   browser-tools: circleci/browser-tools@1.4.0
+  slack: "circleci/slack@4.10.1"
 
 executors:
   xlarge:
@@ -64,7 +65,6 @@ commands:
           name: "Clone e2e_jt_tests repository"
           command: |
             git clone -b master git@github.com:jobteaser/e2e_jt_tests.git
-            ls -al
           working_directory: "~/project"
 
   clone_privacy:
@@ -74,7 +74,6 @@ commands:
           name: "Clone privacy repository"
           command: |
             git clone -b master git@github.com:jobteaser/privacy.git
-            ls -al
           working_directory: "~/project"
 
   manage_dependencies_e2e_jt_tests:
@@ -96,16 +95,153 @@ commands:
     description: "Cache management for dependencies on repo privacy"
     steps:
       - restore_cache:
-          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/privacy/package-lock.json" }}
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/privacy/tests/package-lock.json" }}
       - run:
           name: "Install dependencies on repo privacy"
           command: |
             npm i
-          working_directory: "~/project/privacy"
+          working_directory: "~/project/privacy/tests"
       - save_cache:
-          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/privacy/package-lock.json" }}
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/privacy/tests/package-lock.json" }}
           paths:
-            - ~/project/privacy/node_modules
+            - ~/project/privacy/tests/node_modules
+
+  setup_env:
+    description: "Setup environment for PII testing"
+    steps:
+      - run:
+          name: "Setup environment for PII testing"
+          command: |
+            npm run clean
+            npm run service:list
+            mkdir -p reports
+          working_directory: "~/project/privacy/tests"
+
+  execute_list_pii_descriptions:
+    description: "Execute tests on List of PII descriptions on service $SERVICE"
+    steps:
+      - run:
+          name: "Execute tests on List of PII descriptions"
+          command: |
+            npm run pii:list
+          working_directory: "~/project/privacy/tests"
+
+  execute_get_user_pii:
+    description: "Execute tests on Get User PII on existing user on service $SERVICE"
+    steps:
+      - run:
+          name: "Execute tests on Get User PII on existing user"
+          command: |
+            npm run get:check
+          working_directory: "~/project/privacy/tests"
+
+  create_user:
+    description: "Create user"
+    steps:
+      - run:
+          name: "Create user"
+          command: |
+            ./scripts/pii/createStudentPII.sh $TAGS
+          working_directory: "~/project/e2e_jt_tests"
+
+  delete_user:
+    description: "Delete user"
+    steps:
+      - run:
+          name: "Delete user"
+          command: |
+            ./scripts/pii/deleteStudentPII.sh
+          working_directory: "~/project/e2e_jt_tests"
+
+  execute_get_user_pii_on_created_user:
+    description: "Execute tests on Get User PII on created user on service $SERVICE"
+    steps:
+      - run:
+          name: "Execute tests on Get User PII on created user"
+          command: |
+            export STEP=CREATE
+            npm run check:user:pii
+          working_directory: "~/project/privacy/tests"
+
+  execute_get_user_pii_on_deleted_user:
+    description: "Execute tests on Get User PII on deleted user on service $SERVICE"
+    steps:
+      - run:
+          name: "Execute tests on Get User PII on deleted user"
+          command: |
+            export STEP=DELETE
+            npm run check:user:pii
+          working_directory: "~/project/privacy/tests"
+
+  upload_artifacts:
+    description: "Updload artifacts"
+    steps:
+      - store_artifacts:
+          path: "reports"
+          working_directory: "~/project/privacy/tests"
+      - store_artifacts:
+          path: "reports"
+          working_directory: "~/project/e2e_jt_tests"
+
+  notify:
+    description: "Slack notification"
+    parameters:
+      info:
+        type: string
+        default: ''
+      status:
+        type: string
+        default: ':broken_heart:'
+    steps:
+      - run:
+          name: Get artifacts
+          command: |
+            export FORCE_COLOR=0
+            export INFO="<< parameters.info >>"
+            export STATUS="<< parameters.status >>"
+            ./scripts/getArtifacts.sh
+          when: always
+          working_directory: "~/project/tests"
+
+      - slack/notify:
+          channel: ${CHANNEL_ID}
+          event: fail
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${TITLE}"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "${CONTEXT}"
+                    }
+                  ]
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "${LINKS}"
+                    }
+                  ]
+                }
+              ]
+            }
 
 jobs:
   execute_pii_tests:
@@ -117,9 +253,31 @@ jobs:
         type: executor
         default: "large"
     executor: "<< parameters.executor_type >>"
+    environment:
+      FORCE_COLOR: "0"
+      SERVICE: << parameters.service >>
+      TAGS: "@<< parameters.service >>"
     steps:
       - service/configure_ssh
       - clone_e2e_jt_tests
       - clone_privacy
       - manage_dependencies_e2e_jt_tests
       - manage_dependencies_privacy
+      - browser-tools/install-chrome
+      - browser-tools/install-chromedriver
+      - setup_env
+      - execute_list_pii_descriptions
+      - upload_artifacts
+      - notify:
+          info: 'ListPIIDescriptions'
+      - execute_get_user_pii
+      - upload_artifacts
+      - notify:
+          info: 'GetUserPII - CC existing user'
+      - create_user
+      - execute_get_user_pii_on_created_user
+      - delete_user
+      - execute_get_user_pii_on_deleted_user
+      - upload_artifacts
+      - notify:
+          info: 'GetUserPII - CC created and deleted user'
