@@ -77,7 +77,7 @@ commands:
             ls -al
           working_directory: "~/project"
 
- manage_dependencies_e2e_jt_tests:
+  manage_dependencies_e2e_jt_tests:
     description: "Cache management for dependencies on repo e2e_jt_tests"
     steps:
       - restore_cache:
@@ -91,6 +91,7 @@ commands:
           key: npm-dep-{{ .Branch }}-{{ checksum "e2e_jt_tests/package-lock.json" }}
           paths:
             - ~/project/e2e_jt_tests/node_modules
+            
   manage_dependencies_privacy:
     description: "Cache management for dependencies on repo privacy"
     steps:
