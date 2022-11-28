@@ -4,6 +4,7 @@ description: |
   Run pii tests from privacy and e2e_jt_test repositories
 
 orbs:
+  go-service: "jobteaser/go-service@0.36.0"
   service: "jobteaser/service@0.10.0"
   browser-tools: circleci/browser-tools@1.4.0
   slack: "circleci/slack@4.10.1"
@@ -16,7 +17,7 @@ executors:
         default: "30"
     resource_class: "xlarge"
     docker:
-      - image: "cimg/node:19.1.0-browsers"
+      - image: "cimg/go:1.19.3-browsers"
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -28,7 +29,7 @@ executors:
         default: "30"
     resource_class: "large"
     docker:
-      - image: "cimg/node:19.1.0-browsers"
+      - image: "cimg/go:1.19.3-browsers"
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -39,7 +40,7 @@ executors:
         type: string
         default: "30"
     docker:
-      - image: "cimg/node:19.1.0-browsers"
+      - image: "cimg/go:1.19.3-browsers"
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -51,7 +52,7 @@ executors:
         default: "30"
     resource_class: "small"
     docker:
-      - image: "cimg/node:19.1.0-browsers"
+      - image: "cimg/go:1.19.3-browsers"
         environment:
           DEBUG: "trace"
           E2E_MAX_INSTANCES: << parameters.max_instances >>
@@ -110,7 +111,10 @@ commands:
     description: "Build privacy service"
     steps:
       - run:
+          name: "Build privacy"
           command: |
+            git config --global url."git@github.com:".insteadOf "https://github.com/"
+            go env -w GOPRIVATE=github.com/jobteaser/*
             make build
           working_directory: "~/project/privacy"
 
@@ -121,27 +125,38 @@ commands:
           name: "Setup environment for PII testing"
           command: |
             npm run clean
-            npm run service:list
             mkdir -p reports
+            npm run service:list
           working_directory: "~/project/privacy/tests"
+          when: on_success
 
   execute_list_pii_descriptions:
-    description: "Execute tests on List of PII descriptions on service $SERVICE"
+    parameters:
+      service:
+        type: string
+        default: ''
+    description: "Execute tests on List of PII descriptions on service << parameters.service >>"
     steps:
       - run:
-          name: "Execute tests on List of PII descriptions"
+          name: "Execute tests on List of PII descriptions on service << parameters.service >>"
           command: |
             npm run pii:list
           working_directory: "~/project/privacy/tests"
+          when: on_success
 
   execute_get_user_pii:
-    description: "Execute tests on Get User PII on existing user on service $SERVICE"
+    parameters:
+      service:
+        type: string
+        default: ''
+    description: "Execute tests on Get User PII on existing user on service << parameters.service >>"
     steps:
       - run:
-          name: "Execute tests on Get User PII on existing user"
+          name: "Execute tests on Get User PII on existing user on service << parameters.service >>"
           command: |
             npm run get:check
           working_directory: "~/project/privacy/tests"
+          when: on_success
 
   create_user:
     description: "Create user"
@@ -149,8 +164,12 @@ commands:
       - run:
           name: "Create user"
           command: |
+            mkdir -p ./reports
             ./scripts/pii/createStudentPII.sh $TAGS
+            cp ./reports/account.json ~/project/privacy/tests/reports
+            cp ./reports/*.pdf ~/project/privacy/tests/reports
           working_directory: "~/project/e2e_jt_tests"
+          when: on_success
 
   delete_user:
     description: "Delete user"
@@ -160,36 +179,49 @@ commands:
           command: |
             ./scripts/pii/deleteStudentPII.sh
           working_directory: "~/project/e2e_jt_tests"
+          when: on_success
 
   execute_get_user_pii_on_created_user:
-    description: "Execute tests on Get User PII on created user on service $SERVICE"
+    parameters:
+      service:
+        type: string
+        default: ''
+    description: "Execute tests on Get User PII on created user on service << parameters.service >>"
     steps:
       - run:
-          name: "Execute tests on Get User PII on created user"
+          name: "Execute tests on Get User PII on created user on service << parameters.service >>"
           command: |
             export STEP=CREATE
             npm run check:user:pii
           working_directory: "~/project/privacy/tests"
+          when: on_success
 
   execute_get_user_pii_on_deleted_user:
-    description: "Execute tests on Get User PII on deleted user on service $SERVICE"
+    parameters:
+      service:
+        type: string
+        default: ''
+    description: "Execute tests on Get User PII on deleted user on service << parameters.service >>"
     steps:
       - run:
-          name: "Execute tests on Get User PII on deleted user"
+          name: "Execute tests on Get User PII on deleted user on service << parameters.service >>"
           command: |
             export STEP=DELETE
             npm run check:user:pii
           working_directory: "~/project/privacy/tests"
+          when: on_success
 
   upload_artifacts:
-    description: "Updload artifacts"
+    description: "Upload artifacts"
     steps:
       - store_artifacts:
-          path: "reports"
-          working_directory: "~/project/privacy/tests"
+          path: "~/project/privacy/tests/reports"
+          destination: "reports"
+          when: always
       - store_artifacts:
-          path: "reports"
-          working_directory: "~/project/e2e_jt_tests"
+          path: "~/project/e2e_jt_tests/reports"
+          destination: "reports"
+          when: always
 
   notify:
     description: "Slack notification"
@@ -200,6 +232,9 @@ commands:
       status:
         type: string
         default: ':broken_heart:'
+      channel_id:
+        type: string
+        default: ''
     steps:
       - run:
           name: Get artifacts
@@ -208,11 +243,11 @@ commands:
             export INFO="<< parameters.info >>"
             export STATUS="<< parameters.status >>"
             ./scripts/getArtifacts.sh
-          when: always
-          working_directory: "~/project/tests"
+          working_directory: "~/project/privacy/tests"
+          when: on_success
 
       - slack/notify:
-          channel: ${CHANNEL_ID}
+          channel: << parameters.channel_id >>
           event: fail
           custom: |
             {
@@ -257,6 +292,9 @@ jobs:
       service:
         type: string
         default: ""
+      channel_id:
+        type: string
+        default: ""
       executor_type:
         type: executor
         default: "large"
@@ -275,18 +313,27 @@ jobs:
       - browser-tools/install-chrome
       - browser-tools/install-chromedriver
       - setup_env
-      - execute_list_pii_descriptions
+      - execute_list_pii_descriptions:
+          service: << parameters.service >>
       - upload_artifacts
       - notify:
           info: 'ListPIIDescriptions'
-      - execute_get_user_pii
+          channel_id: << parameters.channel_id >>
+      - setup_env
+      - execute_get_user_pii:
+          service: << parameters.service >>
       - upload_artifacts
       - notify:
           info: 'GetUserPII - CC existing user'
+          channel_id: << parameters.channel_id >>
+      - setup_env
       - create_user
-      - execute_get_user_pii_on_created_user
+      - execute_get_user_pii_on_created_user:
+          service: << parameters.service >>
       - delete_user
-      - execute_get_user_pii_on_deleted_user
+      - execute_get_user_pii_on_deleted_user:
+          service: << parameters.service >>
       - upload_artifacts
       - notify:
           info: 'GetUserPII - CC created and deleted user'
+          channel_id: << parameters.channel_id >>
