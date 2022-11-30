@@ -1,0 +1,339 @@
+version: 2.1
+
+description: |
+  Run pii tests from privacy and e2e_jt_test repositories
+
+orbs:
+  go-service: "jobteaser/go-service@0.36.0"
+  service: "jobteaser/service@0.10.0"
+  browser-tools: circleci/browser-tools@1.4.0
+  slack: "circleci/slack@4.10.1"
+
+executors:
+  xlarge:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    resource_class: "xlarge"
+    docker:
+      - image: "cimg/go:1.19.3-browsers"
+        environment:
+          DEBUG: "trace"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          FORCE_COLOR: "0"
+  large:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    resource_class: "large"
+    docker:
+      - image: "cimg/go:1.19.3-browsers"
+        environment:
+          DEBUG: "trace"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          FORCE_COLOR: "0"
+  medium:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    docker:
+      - image: "cimg/go:1.19.3-browsers"
+        environment:
+          DEBUG: "trace"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          FORCE_COLOR: "0"
+  small:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    resource_class: "small"
+    docker:
+      - image: "cimg/go:1.19.3-browsers"
+        environment:
+          DEBUG: "trace"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          FORCE_COLOR: "0"
+
+commands:
+  clone_e2e_jt_tests:
+    description: "Clone e2e_jt_tests repository"
+    steps:
+      - run:
+          name: "Clone e2e_jt_tests repository"
+          command: |
+            git clone -b master git@github.com:jobteaser/e2e_jt_tests.git
+          working_directory: "~/project"
+
+  clone_privacy:
+    description: "Clone privacy repository"
+    steps:
+      - run:
+          name: "Clone privacy repository"
+          command: |
+            git clone -b master git@github.com:jobteaser/privacy.git
+          working_directory: "~/project"
+
+  manage_dependencies_e2e_jt_tests:
+    description: "Cache management for dependencies on repo e2e_jt_tests"
+    steps:
+      - restore_cache:
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/e2e_jt_tests/package-lock.json" }}
+      - run:
+          name: "Install dependencies on repo e2e_jt_tests"
+          command: |
+            npm i
+          working_directory: "~/project/e2e_jt_tests"
+      - save_cache:
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/e2e_jt_tests/package-lock.json" }}
+          paths:
+            - ~/project/e2e_jt_tests/node_modules
+            
+  manage_dependencies_privacy:
+    description: "Cache management for dependencies on repo privacy"
+    steps:
+      - restore_cache:
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/privacy/tests/package-lock.json" }}
+      - run:
+          name: "Install dependencies on repo privacy"
+          command: |
+            npm i
+          working_directory: "~/project/privacy/tests"
+      - save_cache:
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/privacy/tests/package-lock.json" }}
+          paths:
+            - ~/project/privacy/tests/node_modules
+
+  build_privacy:
+    description: "Build privacy service"
+    steps:
+      - run:
+          name: "Build privacy"
+          command: |
+            git config --global url."git@github.com:".insteadOf "https://github.com/"
+            go env -w GOPRIVATE=github.com/jobteaser/*
+            make build
+          working_directory: "~/project/privacy"
+
+  setup_env:
+    description: "Setup environment for PII testing"
+    steps:
+      - run:
+          name: "Setup environment for PII testing"
+          command: |
+            npm run clean
+            mkdir -p reports
+            npm run service:list
+          working_directory: "~/project/privacy/tests"
+          when: on_success
+
+  execute_list_pii_descriptions:
+    parameters:
+      service:
+        type: string
+        default: ''
+    description: "Execute tests on List of PII descriptions on service << parameters.service >>"
+    steps:
+      - run:
+          name: "Execute tests on List of PII descriptions on service << parameters.service >>"
+          command: |
+            npm run pii:list
+          working_directory: "~/project/privacy/tests"
+          when: on_success
+
+  execute_get_user_pii:
+    parameters:
+      service:
+        type: string
+        default: ''
+    description: "Execute tests on Get User PII on existing user on service << parameters.service >>"
+    steps:
+      - run:
+          name: "Execute tests on Get User PII on existing user on service << parameters.service >>"
+          command: |
+            npm run get:check
+          working_directory: "~/project/privacy/tests"
+          when: on_success
+
+  create_user:
+    description: "Create user"
+    steps:
+      - run:
+          name: "Create user"
+          command: |
+            mkdir -p ./reports
+            ./scripts/pii/createStudentPII.sh $TAGS
+            cp ./reports/account.json ~/project/privacy/tests/reports
+            cp ./reports/*.pdf ~/project/privacy/tests/reports
+          working_directory: "~/project/e2e_jt_tests"
+          when: on_success
+
+  delete_user:
+    description: "Delete user"
+    steps:
+      - run:
+          name: "Delete user"
+          command: |
+            ./scripts/pii/deleteStudentPII.sh
+          working_directory: "~/project/e2e_jt_tests"
+          when: on_success
+
+  execute_get_user_pii_on_created_user:
+    parameters:
+      service:
+        type: string
+        default: ''
+    description: "Execute tests on Get User PII on created user on service << parameters.service >>"
+    steps:
+      - run:
+          name: "Execute tests on Get User PII on created user on service << parameters.service >>"
+          command: |
+            export STEP=CREATE
+            npm run check:user:pii
+          working_directory: "~/project/privacy/tests"
+          when: on_success
+
+  execute_get_user_pii_on_deleted_user:
+    parameters:
+      service:
+        type: string
+        default: ''
+    description: "Execute tests on Get User PII on deleted user on service << parameters.service >>"
+    steps:
+      - run:
+          name: "Execute tests on Get User PII on deleted user on service << parameters.service >>"
+          command: |
+            export STEP=DELETE
+            npm run check:user:pii
+          working_directory: "~/project/privacy/tests"
+          when: on_success
+
+  upload_artifacts:
+    description: "Upload artifacts"
+    steps:
+      - store_artifacts:
+          path: "~/project/privacy/tests/reports"
+          destination: "reports"
+          when: always
+      - store_artifacts:
+          path: "~/project/e2e_jt_tests/reports"
+          destination: "reports"
+          when: always
+
+  notify:
+    description: "Slack notification"
+    parameters:
+      info:
+        type: string
+        default: ''
+      status:
+        type: string
+        default: ':broken_heart:'
+      channel_id:
+        type: string
+        default: ''
+    steps:
+      - run:
+          name: Get artifacts
+          command: |
+            export FORCE_COLOR=0
+            export INFO="<< parameters.info >>"
+            export STATUS="<< parameters.status >>"
+            ./scripts/getArtifacts.sh
+          working_directory: "~/project/privacy/tests"
+          when: on_success
+
+      - slack/notify:
+          channel: << parameters.channel_id >>
+          event: fail
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${TITLE}"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "${CONTEXT}"
+                    }
+                  ]
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "${LINKS}"
+                    }
+                  ]
+                }
+              ]
+            }
+
+jobs:
+  execute_pii_tests:
+    parameters:
+      service:
+        type: string
+        default: ""
+      channel_id:
+        type: string
+        default: ""
+      executor_type:
+        type: executor
+        default: "large"
+    executor: "<< parameters.executor_type >>"
+    environment:
+      FORCE_COLOR: "0"
+      SERVICE: << parameters.service >>
+      TAGS: "@<< parameters.service >>"
+    steps:
+      - service/configure_ssh
+      - clone_e2e_jt_tests
+      - clone_privacy
+      - manage_dependencies_e2e_jt_tests
+      - manage_dependencies_privacy
+      - build_privacy
+      - browser-tools/install-chrome
+      - browser-tools/install-chromedriver
+      - setup_env
+      - execute_list_pii_descriptions:
+          service: << parameters.service >>
+      - upload_artifacts
+      - notify:
+          info: 'ListPIIDescriptions'
+          channel_id: << parameters.channel_id >>
+      - setup_env
+      - execute_get_user_pii:
+          service: << parameters.service >>
+      - upload_artifacts
+      - notify:
+          info: 'GetUserPII - CC existing user'
+          channel_id: << parameters.channel_id >>
+      - setup_env
+      - create_user
+      - execute_get_user_pii_on_created_user:
+          service: << parameters.service >>
+      - delete_user
+      - execute_get_user_pii_on_deleted_user:
+          service: << parameters.service >>
+      - upload_artifacts
+      - notify:
+          info: 'GetUserPII - CC created and deleted user'
+          channel_id: << parameters.channel_id >>
