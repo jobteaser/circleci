@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+#Only report branches old enough (>30min) to have possibly been auto-merged
+if [[ $(($(date +%s) - $(git log -1 --format=%ct))) -gt 1800 ]]; then
+  NOTIFICATION_CHANNEL_URL=$SLACK_TRANSLATION_NOTIF_URL
+  MESSAGE=":red_circle: $CIRCLE_BRANCH branch still exists:"
+
+  if [ "$CIRCLE_PULL_REQUEST" = "" ]; then
+    MESSAGE="$MESSAGE PR auto-merge have failed because NO PR WAS CREATED.' :red_circle:"
+  else
+    MESSAGE="$MESSAGE PR auto-merge may have failed for '$CIRCLE_PULL_REQUEST' :red_circle:"
+  fi
+
+  curl -X POST -H 'Content-type: application/json' \
+       --data "{\"text\": \"$MESSAGE\"}" \
+       "$NOTIFICATION_CHANNEL_URL"
+fi

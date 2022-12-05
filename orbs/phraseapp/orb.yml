@@ -1,0 +1,62 @@
+version: 2.1
+
+description: |
+  Standard orb to automatically create or merge phraseapp PRs.
+
+orbs:
+  service: "jobteaser/service@0.10.0"
+
+executors:
+  phraseapp:
+    docker:
+      - image: "jobteaser/circleci-phraseapp-phraseapp:0.0.1"
+        auth:
+          username: "$DOCKER_LOGIN"
+          password: "$DOCKER_PASSWORD"
+
+
+commands:
+  run-phraseapp-autocreate:
+    steps:
+      - checkout
+      - service/configure_ssh
+      - run:
+          name: "Automatically create PhraseApp PR if the locales have been updated"
+          command:  |
+            autocreate-phraseapp-pr
+
+  run-phraseapp-automerge:
+    steps:
+      - checkout
+      - service/configure_ssh
+      - run:
+          name: "Automatically merge phraseApp PR"
+          command: |
+            automerge-phraseapp-pr
+
+  run-phraseapp-notify-automerge-failed:
+    steps:
+      - checkout
+      - service/configure_ssh
+      - run:
+          name: "Automatically notify if the auto-merge failed"
+          command: |
+            automerge-phraseapp-pr
+
+
+jobs:
+  autocreate-phraseapp-pr:
+    executor: "phraseapp"
+    steps:
+      - run-phraseapp-autocreate
+
+  automerge-phraseapp-pr:
+    executor: "phraseapp"
+    steps:
+      - run-phraseapp-automerge
+
+  notify-failed-automerge-phraseapp-pr:
+    executor: "phraseapp"
+    steps:
+      - run-phraseapp-notify-automerge-failed
+
