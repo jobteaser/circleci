@@ -100,11 +100,15 @@ commands:
             
   open_sessions:
     description: "Open sesssions for integration testing"
+    parameters:
+      service:
+        type: string
+        default: ''
     steps:
       - run:
           name: "Open sesssions for integration testing"
           command: |
-            export SERVICE=jobad
+            export SERVICE=<< parameters.service >>
             export E2E_MAX_INSTANCES=2
             ./scripts/integration/openSessions.sh
             mkdir -p ~/project/integration-tests/env
@@ -245,7 +249,8 @@ jobs:
       - service/configure_ssh
       - clone_e2e_jt_tests
       - manage_dependencies_e2e_jt_tests
-      - open_sessions
+      - open_sessions:
+          service: << parameters.service >>
       - execute_integration_tests:
           service: << parameters.service >>
       - upload_artifacts
