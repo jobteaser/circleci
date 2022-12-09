@@ -236,7 +236,7 @@ jobs:
         default: ""
       executor_type:
         type: executor
-        default: "small"
+        default: "medium"
     executor: "<< parameters.executor_type >>"
     environment:
       FORCE_COLOR: "0"
