@@ -4,8 +4,8 @@ description: |
   Run e2e web tests from e2e_jt_tests repo
 
 orbs:
+  browser-tools: circleci/browser-tools@1.4.0
   service: "jobteaser/service@0.10.0"
-  browser-tools: circleci/browser-tools@1.2.2
 
 executors:
   xlarge:
@@ -147,8 +147,23 @@ commands:
       find_suites_tags_script_path:
         type: string
         default: script/find_correct_tests_ui_jobteaser.sh
+      browser:
+        type: string
+        default: "chrome"
     steps:
-      - browser-tools/install-browser-tools
+      - when:
+          condition:
+            equal: [ chrome, << parameters.browser >> ]
+          steps:
+            - browser-tools/install-chrome:
+                replace-existing: true
+            - browser-tools/install-chromedriver
+      - when:
+          condition:
+            equal: [ firefox, << parameters.browser >> ]
+          steps:
+            - browser-tools/install-firefox
+            - browser-tools/install-geckodriver
       - run:
           name: "Find tags to run, halt if no tags matched or run tests"
           command: |
@@ -273,6 +288,10 @@ jobs:
         description: CircleCI Token
         type: string
         default: "$CIRCLE_CI_HM_TOKEN"
+      browser:
+        description: Browser name
+        type: string
+        default: "chrome"
     executor: "<< parameters.executor_type >>"
     steps:
       - service/configure_ssh
@@ -286,8 +305,8 @@ jobs:
           no_rl_cloudflare_cookie: << parameters.no_rl_cloudflare_cookie >>
           tags: << parameters.tags >>
           find_suites_tags_script_path: << parameters.find_suites_tags_script_path >>
+          browser: << parameters.browser >>
       - generate_reporting
       - slack_alerting:
           channel: << parameters.channel >>
           ciToken: << parameters.ciToken >>
-      - verify_tracking

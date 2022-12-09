@@ -1,0 +1,254 @@
+version: 2.1
+
+description: |
+  Run integration tests on service
+
+orbs:
+  browser-tools: circleci/browser-tools@1.4.0
+  slack: "circleci/slack@4.10.1"
+  service: "jobteaser/service@0.10.0"
+  go-service: "jobteaser/go-service@0.36.0"
+
+executors:
+  xlarge:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    resource_class: "xlarge"
+    docker:
+      - image: "cimg/node:18.12.1-browsers"
+        environment:
+          DEBUG: "trace"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          FORCE_COLOR: "0"
+  large:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    resource_class: "large"
+    docker:
+      - image: "cimg/node:18.12.1-browsers"
+        environment:
+          DEBUG: "trace"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          FORCE_COLOR: "0"
+  medium:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    docker:
+      - image: "cimg/node:18.12.1-browsers"
+        environment:
+          DEBUG: "trace"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          FORCE_COLOR: "0"
+  small:
+    parameters:
+      max_instances:
+        type: string
+        default: "30"
+    resource_class: "small"
+    docker:
+      - image: "cimg/node:18.12.1-browsers"
+        environment:
+          DEBUG: "trace"
+          E2E_MAX_INSTANCES: << parameters.max_instances >>
+          FORCE_COLOR: "0"
+
+commands:
+  clone_e2e_jt_tests:
+    description: "Clone e2e_jt_tests repository"
+    steps:
+      - run:
+          name: "Clone e2e_jt_tests repository"
+          command: |
+            git clone -b master git@github.com:jobteaser/e2e_jt_tests.git
+          working_directory: "~/project"
+
+  manage_dependencies_e2e_jt_tests:
+    description: "Cache management for dependencies on repo e2e_jt_tests"
+    steps:
+      - restore_cache:
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/e2e_jt_tests/package-lock.json" }}
+      - run:
+          name: "Install dependencies on repo e2e_jt_tests"
+          command: |
+            npm i
+          working_directory: "~/project/e2e_jt_tests"
+      - save_cache:
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/e2e_jt_tests/package-lock.json" }}
+          paths:
+            - ~/project/e2e_jt_tests/node_modules
+            
+  manage_dependencies:
+    description: "Cache management for dependencies on repo"
+    steps:
+      - restore_cache:
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/integration-tests/package-lock.json" }}
+      - run:
+          name: "Install dependencies on repo"
+          command: |
+            npm i
+          working_directory: "~/project/integration-tests"
+      - save_cache:
+          key: npm-dep-{{ .Branch }}-{{ checksum "~/project/integration-tests/package-lock.json" }}
+          paths:
+            - ~/project/integration-tests/node_modules
+            
+  open_sessions:
+    description: "Open sesssions for integration testing"
+    steps:
+      - run:
+          name: "Open sesssions for integration testing"
+          command: |
+            export SERVICE=jobad
+            export E2E_MAX_INSTANCES=2
+            ./scripts/integration/openSessions.sh
+            mkdir -p ~/project/integration-tests/env
+            cp ~/project/e2e_jt_tests/env/*.json ~/project/integration-tests/env
+          working_directory: "~/project/e2e_jt_tests"
+          when: on_success
+
+  execute_integration_tests:
+    description: "Execute integration tests on service << parameters.service >>"
+    parameters:
+      service:
+        type: string
+        default: ''
+    steps:
+      - run:
+          name: "Execute integration tests on service << parameters.service >>"
+          command: |
+            export TITLE="Integration tests on service << parameters.service >>"
+            npm run tests
+          working_directory: "~/project/integration-tests"
+          when: on_success
+
+  upload_artifacts:
+    description: "Upload artifacts"
+    steps:
+      - store_test_results:
+          path: "e2e_jt_tests/reports"
+      - store_artifacts:
+          path: "~/project/integration-tests/reports"
+          destination: "reports"
+          when: always
+      - store_artifacts:
+          path: "~/project/integration-tests/api"
+          destination: "reports"
+          when: always
+      - store_artifacts:
+          path: "~/project/e2e_jt_tests/reports"
+          destination: "reports"
+          when: always
+
+  notify:
+    description: "Slack notification"
+    parameters:
+      info:
+        type: string
+        default: ''
+      status:
+        type: string
+        default: ':broken_heart:'
+      channel_id:
+        type: string
+        default: ''
+    steps:
+      - run:
+          name: Get artifacts
+          command: |
+            export FORCE_COLOR=0
+            export INFO="<< parameters.info >>"
+            export STATUS="<< parameters.status >>"
+            TITLE="*$CIRCLE_PROJECT_REPONAME service - $INFO $STATUS*"
+            ARTIFACTS=$(curl -X GET "https://circleci.com/api/v1.1/project/github/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/$CIRCLE_BUILD_NUM/artifacts" -H "Accept: application/json" -u "$CIRCLE_CI_HM_TOKEN:")
+            echo $ARTIFACTS > artifacts.json
+            echo $ARTIFACTS
+            INDEX_HTML=$(grep -o '"url": *"[^"]*.index.html"' artifacts.json | grep -o '"[^"]*"$')
+            echo $INDEX_HTML
+            LINKS="<${CIRCLE_BUILD_URL}|Go to CircleCI job>"
+            LINKS="$LINKS\n<${INDEX_HTML}|Tests report>"
+            echo $LINKS
+            CONTEXT="*Project:* ${CIRCLE_PROJECT_REPONAME}\n*Branch:* ${CIRCLE_BRANCH}\n*Contact:* ${CIRCLE_USERNAME}"
+            echo $CONTEXT
+            echo -E "export TITLE=\"$TITLE\"" >> $BASH_ENV
+            echo -E "export CONTEXT=\"$CONTEXT\"" >> $BASH_ENV
+            echo -E "export LINKS=\"$LINKS\"" >> $BASH_ENV
+          working_directory: "~/project/integration-tests"
+          when: on_success
+
+      - slack/notify:
+          channel: << parameters.channel_id >>
+          event: fail
+          custom: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${TITLE}"
+                  }
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "context",
+                  "elements": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "${CONTEXT}"
+                    }
+                  ]
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "${LINKS}"
+                    }
+                  ]
+                }
+              ]
+            }
+
+jobs:
+  execute_integration_tests:
+    parameters:
+      service:
+        type: string
+        default: ""
+      channel_id:
+        type: string
+        default: ""
+      executor_type:
+        type: executor
+        default: "small"
+    executor: "<< parameters.executor_type >>"
+    environment:
+      FORCE_COLOR: "0"
+    steps:
+      - checkout
+      - manage_dependencies
+      - browser-tools/install-chrome:
+          replace-existing: true
+      - browser-tools/install-chromedriver
+      - service/configure_ssh
+      - clone_e2e_jt_tests
+      - manage_dependencies_e2e_jt_tests
+      - open_sessions
+      - execute_integration_tests:
+          service: << parameters.service >>
+      - upload_artifacts
+      - notify:
+          info: 'Integration tests on service << parameters.service >>'
+          channel_id: << parameters.channel_id >>
