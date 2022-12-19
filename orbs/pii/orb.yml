@@ -289,6 +289,64 @@ commands:
             }
 
 jobs:
+  execute_list_pii_descriptions_tests:
+    parameters:
+      service:
+        type: string
+        default: ""
+      channel_id:
+        type: string
+        default: ""
+      executor_type:
+        type: executor
+        default: "small"
+    executor: "<< parameters.executor_type >>"
+    environment:
+      FORCE_COLOR: "0"
+      SERVICE: << parameters.service >>
+      TAGS: "@<< parameters.service >>"
+    steps:
+      - service/configure_ssh
+      - clone_privacy
+      - manage_dependencies_privacy
+      - build_privacy
+      - setup_env
+      - execute_list_pii_descriptions:
+          service: << parameters.service >>
+      - upload_artifacts
+      - notify:
+          info: 'ListPIIDescriptions'
+          channel_id: << parameters.channel_id >>
+
+  execute_pii_tests_on_existing_user:
+    parameters:
+      service:
+        type: string
+        default: ""
+      channel_id:
+        type: string
+        default: ""
+      executor_type:
+        type: executor
+        default: "small"
+    executor: "<< parameters.executor_type >>"
+    environment:
+      FORCE_COLOR: "0"
+      SERVICE: << parameters.service >>
+      TAGS: "@<< parameters.service >>"
+    steps:
+      - service/configure_ssh
+      - clone_privacy
+      - manage_dependencies_privacy
+      - build_privacy
+      - setup_env
+      - execute_get_user_pii:
+          service: << parameters.service >>
+      - upload_artifacts
+      - notify:
+          info: 'GetUserPII - CC existing user'
+          channel_id: << parameters.channel_id >>
+
   execute_pii_tests:
     parameters:
       service:
