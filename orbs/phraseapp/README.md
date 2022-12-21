@@ -55,31 +55,35 @@ phrase:
         file_format: nested_json
 ```        
 
+Note that you could also use different `file_format` (like `simple_json`) too.
 
 
 #### 2) Add the following environment variables on [circleci](https://app.circleci.com/settings/project/github/jobteaser/<repository>/environment-variables). 
+
+Note that you can also specify then directly in each command (be careful about consistency between them).
 
 The phrase token can be generated [here](https://app.phrase.com/settings/oauth_access_tokens).
 - PHRASEAPP_ACCESS_TOKEN 
 - PHRASEAPP_PROJECT_ID
 
 The github user email is needed to create the PR:
-- PHRASEAPP_USER_EMAIL
+- GITHUB_USER_EMAIL
 
 If you want to receive slack notifications, you also need to add the channel webhook url. 
 - SLACK_TRANSLATION_NOTIF_URL
 
-
+To be able to create and merge PR, you will also need a token from Github
+- GITHUB_PR_AUTOMATION_TOKEN
 
 #### 3) Update the .circleci/config: 
 
-```
+```yml
 orbs:
   service: "jobteaser/service@0.10.0"
   phraseapp: "jobteaser/phraseapp@dev:0.0.1"
   
 workflows:
-  main 
+  main:
     jobs:
       - phraseapp/automerge-phraseapp-pr:
           name: "automerge-phraseapp-pr"

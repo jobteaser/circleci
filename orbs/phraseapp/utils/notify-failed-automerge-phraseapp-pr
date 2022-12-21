@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
+SLACK_TRANSLATION_NOTIF_URL=$1
+
 #Only report branches old enough (>30min) to have possibly been auto-merged
 if [[ $(($(date +%s) - $(git log -1 --format=%ct))) -gt 1800 ]]; then
-  NOTIFICATION_CHANNEL_URL=$SLACK_TRANSLATION_NOTIF_URL
   MESSAGE=":red_circle: $CIRCLE_BRANCH branch still exists:"
 
   if [ "$CIRCLE_PULL_REQUEST" = "" ]; then
@@ -13,5 +14,5 @@ if [[ $(($(date +%s) - $(git log -1 --format=%ct))) -gt 1800 ]]; then
 
   curl -X POST -H 'Content-type: application/json' \
        --data "{\"text\": \"$MESSAGE\"}" \
-       "$NOTIFICATION_CHANNEL_URL"
+       "$SLACK_TRANSLATION_NOTIF_URL"
 fi

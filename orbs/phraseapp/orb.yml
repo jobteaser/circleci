@@ -17,31 +17,77 @@ executors:
 
 commands:
   run-phraseapp-autocreate:
+    description: "Automatically create PhraseApp PR if the locales have been updated"
+    parameters:
+      phrase_project_id:
+        description: "ID of your project on Phrase"
+        type: string
+        default: "$PHRASEAPP_PROJECT_ID"
+      phrase_access_token:
+        description: "Access token to be able to push/pull your Phrase project"
+        type: string
+        default: "$PHRASEAPP_ACCESS_TOKEN"
+      github_token:
+        description: "token to be able to create PR on the Github project"
+        type: string
+        default: "$GITHUB_PR_AUTOMATION_TOKEN"
+      github_user_mail:
+        description: "email to be used for PR creation"
+        type: string
+        default: "$GITHUB_USER_EMAIL"
+      branch_name:
+        description: "name of the branch to create (will be also used in automerge command)"
+        type: string
+        default: "phraseapp-locales"
     steps:
       - checkout
       - service/configure_ssh
       - run:
           name: "Automatically create PhraseApp PR if the locales have been updated"
           command:  |
-            autocreate-phraseapp-pr
+            autocreate-phraseapp-pr \
+            <<parameters.phrase_project_id>> \
+            <<parameters.phrase_access_token>> \
+            <<parameters.github_token>> \
+            <<parameters.github_user_mail>> \
+            <<parameters.branch_name>>
 
   run-phraseapp-automerge:
+    description: "Automatically merge phraseApp PR"
+    parameters:
+      branch_name:
+        description: "name of the branch to merge to automatically"
+        type: string
+        default: "master"
+      github_token:
+        description: "token to be able to create PR on the Github project"
+        type: string
+        default: "$GITHUB_PR_AUTOMATION_TOKEN"
     steps:
       - checkout
       - service/configure_ssh
       - run:
           name: "Automatically merge phraseApp PR"
           command: |
-            automerge-phraseapp-pr
+            automerge-phraseapp-pr \
+            <<parameters.branch_name>> \
+            <<parameters.github_token>>
 
   run-phraseapp-notify-automerge-failed:
+    description: "Notify Slack channel if auto-merge failed"
+    parameters:
+      slack_webhook_url:
+        description: "Slack channel webhook url to be used to notify"
+        type: string
+        default: "$SLACK_TRANSLATION_NOTIF_URL"
     steps:
       - checkout
       - service/configure_ssh
       - run:
           name: "Automatically notify if the auto-merge failed"
           command: |
-            automerge-phraseapp-pr
+            notify-failed-automerge-phraseapp-pr \
+            <<parameters.slack_webhook_url>>
 
 
 jobs:
