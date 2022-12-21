@@ -11,9 +11,10 @@ BRANCH_NAME=$5
 
 git config --global user.email "$GITHUB_USER_EMAIL"
 
-# Delete a phraseapp-locales branch if it exists
+# Delete a phraseapp-locales branch if it exists and update master branch
 echo "Deleting the defined BRANCH_NAME branch if it exists..."
 git push origin --delete "$BRANCH_NAME"
+git fetch origin && git checkout master && git reset --hard origin/master
 
 
 ## Update .phrase.yml file to use phrase-cli
