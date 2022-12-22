@@ -3,6 +3,9 @@
 # This script merges the PhraseApp PR through GitHub API, bypassing the need for
 # developer approval and merging.
 
+BRANCH_NAME=$1
+GITHUB_PR_AUTOMATION_TOKEN=$2
+
 if [[ -z $CIRCLE_PULL_REQUEST ]]; then
   echo "Can't auto-merge a branch without a Pull Request. Please create a PR first."
   exit 1
@@ -10,13 +13,13 @@ fi
 
 switch_enforce_admins () {
   http_method=$1
-  protection_url="https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_USERNAME/branches/$CIRCLE_PROJECT_REPONAME/protection/enforce_admins"
+  protection_url="https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/branches/$BRANCH_NAME/protection/enforce_admins"
 
   response_code=$(curl -X $http_method \
     -w "%{response_code}\n" --silent --output "/dev/null" \
     -H "Content-Type: application/json" \
     -H "Accept: application/vnd.github.v3+json" \
-    -H "User-Agent: $CIRCLE_PROJECT_USERNAME" \
+    -H "User-Agent: $CIRCLE_PROJECT_REPONAME" \
     -H "Authorization: token $GITHUB_PR_AUTOMATION_TOKEN" \
     $protection_url
   )
