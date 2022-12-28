@@ -9,7 +9,7 @@ orbs:
 executors:
   phraseapp:
     docker:
-      - image: "jobteaser/circleci-phraseapp-phraseapp:0.0.2"
+      - image: "jobteaser/circleci-phraseapp-phraseapp:0.0.3"
         auth:
           username: "$DOCKER_LOGIN"
           password: "$DOCKER_PASSWORD"
