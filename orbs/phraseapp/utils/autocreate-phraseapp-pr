@@ -28,7 +28,8 @@ phrase pull
 
 
 # if there are some changes, push them to GitHub and create a pull request
-git diff --exit-code
+# exclude .phrase.yml file from the diff since it was updated just before
+git diff --exit-code -- . ":(exclude).phrase.yml"
 
 if [[ $? == 0 ]]; then
   echo "No locales have been changed."
