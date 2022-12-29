@@ -5,7 +5,7 @@ description: |
 
 orbs:
   browser-tools: circleci/browser-tools@1.4.0
-  service: "jobteaser/service@0.10.0"
+  service: "jobteaser/service@0.46.1"
 
 executors:
   xlarge:
@@ -124,8 +124,7 @@ commands:
           working_directory: e2e_jt_tests
           name: "create reports directory"
           command: |
-            mkdir -p reports/screenshots
-            mkdir -p reports/webdriverServer
+            mkdir -p reports
 
   run_e2e_test:
     parameters:
@@ -207,15 +206,6 @@ commands:
 
   slack_alerting:
     description: "Generate slack notification in case of failure"
-    parameters:
-      channel:
-        description: Channel slack notifications
-        type: string
-        default: "notif-e2e-master"
-      ciToken:
-        description: CircleCI Token
-        type: string
-        default: "$CIRCLE_CI_HM_TOKEN"
     steps:
       - run:
           name: "Publish report"
@@ -238,19 +228,8 @@ commands:
                 echo "Non Draft PR, notify on slack"
               fi
             fi
-            npm run slackArtifactURL << parameters.channel >> << parameters.ciToken >>
+            npm run slackArtifactURL
           when: always
-
-  verify_tracking:
-    description: "Verify tracking logs"
-    steps:
-      - run:
-          name: "Verify Tracking"
-          working_directory: e2e_jt_tests
-          command: npm run verifyTracking
-          when: always
-      - store_artifacts:
-          path: "e2e_jt_tests/reports/tracking-report/"
 
 jobs:
   execute_e2e_tests:
@@ -307,6 +286,5 @@ jobs:
           find_suites_tags_script_path: << parameters.find_suites_tags_script_path >>
           browser: << parameters.browser >>
       - generate_reporting
-      - slack_alerting:
-          channel: << parameters.channel >>
-          ciToken: << parameters.ciToken >>
+      - slack_alerting
+      
