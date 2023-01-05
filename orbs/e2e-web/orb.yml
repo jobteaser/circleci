@@ -254,7 +254,7 @@ jobs:
       bypass_rack_attack_cookie:
         description: "The cookie to add to bypass rate limit"
         type: "string"
-        default: $COOKIE_E2E
+        default: $BYPASS_RACK_ATTACK
       no_rl_cloudflare_cookie:
         description: "The cookie to add to bypass rate limit of Cloudflare"
         type: "string"
