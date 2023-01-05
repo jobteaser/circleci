@@ -163,10 +163,10 @@ jobs:
         description: "The command to run in e2e_jt_tests repo"
         type: "string"
         default: "npm run chrome"
-      e2e_cookie:
+      bypass_rack_attack:
         description: "The cookie to add to bypass rate limit"
         type: "string"
-        default: $COOKIE_E2E
+        default: $BYPASS_RACK_ATTACK
     executor:
       name: "default"
       tags: << parameters.tags >>
@@ -178,13 +178,13 @@ jobs:
       - create_report_folder
       - run_e2e_test:
           command: << parameters.command >>
-          e2e_cookie: << parameters.e2e_cookie >>
+          bypass_rack_attack: << parameters.bypass_rack_attack >>
       - generate_reporting
       - slack_alerting
 ```
 
 In the example above, a job called `execute_e2e_tests` is created, with custom
-parameters `tags`, `max_instances`, `command` and `e2e_cookie`. Note that few
+parameters `tags`, `max_instances`, `command` and `bypass_rack_attack`. Note that few
 steps used (like `clone_test_suite`, `create_report_folder`, ...) are also custom
 commands present in [_orb.yml_](https://github.com/jobteaser/circleci/blob/master/orbs/e2e-web/orb.yml) file.
 
@@ -256,7 +256,7 @@ You can now call your custom commands/jobs:
           tags: "not @legacy and not @flaky and not @pending and not @browserstack and not @prod"
           max_instances: "30"
           command: FEATURE_UI=$CIRCLE_SHA1 npm run chrome
-          e2e_cookie: $COOKIE_E2E
+          bypass_rack_attack: $BYPASS_RACK_ATTACK
 ```
 
 **IMPORTANT: Do not forget to prefix your command / job with the name of your orb**
