@@ -135,10 +135,10 @@ commands:
         description: "The command to run in e2e_jt_tests repo"
         type: "string"
         default: "npm run chrome"
-      e2e_cookie:
+      bypass_rack_attack_cookie:
         description: "The cookie to add to bypass rate limit"
         type: "string"
-        default: $COOKIE_E2E
+        default: $BYPASS_RACK_ATTACK
       no_rl_cloudflare_cookie:
         description: "The cookie to add to bypass rate limit of CloudFlare"
         type: "string"
@@ -183,7 +183,7 @@ commands:
                 circleci-agent step halt
                 exit 0
             fi
-            export BYPASS_RACK_ATTACK=<< parameters.e2e_cookie >>
+            export BYPASS_RACK_ATTACK=<< parameters.bypass_rack_attack_cookie >>
             export NO_RL_CLOUDFLARE=<< parameters.no_rl_cloudflare_cookie >>
             cd ${CIRCLE_WORKING_DIRECTORY/#\~/$HOME}/e2e_jt_tests/
             echo "Tags to run: $TAGS"
@@ -251,10 +251,10 @@ jobs:
         description: "The command to run in e2e_jt_tests repo"
         type: "string"
         default: "npm run chrome"
-      e2e_cookie:
+      bypass_rack_attack_cookie:
         description: "The cookie to add to bypass rate limit"
         type: "string"
-        default: $COOKIE_E2E
+        default: $BYPASS_RACK_ATTACK
       no_rl_cloudflare_cookie:
         description: "The cookie to add to bypass rate limit of Cloudflare"
         type: "string"
@@ -280,7 +280,7 @@ jobs:
       - create_report_folder
       - run_e2e_test:
           command: << parameters.command >>
-          e2e_cookie: << parameters.e2e_cookie >>
+          bypass_rack_attack_cookie: << parameters.bypass_rack_attack_cookie >>
           no_rl_cloudflare_cookie: << parameters.no_rl_cloudflare_cookie >>
           tags: << parameters.tags >>
           find_suites_tags_script_path: << parameters.find_suites_tags_script_path >>
