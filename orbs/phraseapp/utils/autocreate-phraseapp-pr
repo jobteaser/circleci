@@ -45,6 +45,7 @@ else
   echo "Attempting to create a PhraseApp pull request with locale updates..."
     response_code=$(curl -X POST \
       -w "%{response_code}\n" --silent --output "/dev/null" \
+      -H "User-Agent: $CIRCLE_PROJECT_REPONAME" \
       -H "Authorization: token $GITHUB_PR_AUTOMATION_TOKEN" \
       "https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME/pulls" \
       -d '{"title":"Updated translations from Phrase","body":"Exported the most recent locale files from Phrase.","head":"'"$BRANCH_NAME"'","base":"'"$CIRCLE_BRANCH"'"}'
