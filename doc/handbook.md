@@ -37,15 +37,14 @@ A new project must perform the following steps to use the CI/CD pipeline:
   already created this configuration. This should be done in a branch.
 - Add the repository to CircleCI. Do not initiate a build.
 - Add a checkout SSH key in the configuration of the CircleCI project.
+- Use the right context `deploy_staging` / `deploy_prod` in your CircleCI
+  deployment job
 - Add the following environment variables to the CircleCI project:
-  - `K8S_CA_CERT_STAGING`
-  - `K8S_CA_CERT_PROD`
   - `K8S_USER_TOKEN_STAGING`
   - `K8S_USER_TOKEN_PROD`
 
-  CircleCI will need a user token and a CA certificate to connect to staging
-  and prod Kubernetes clusters. This shell command helps you configure your
-  CircleCI.
+  CircleCI will need a user token to connect to staging and prod Kubernetes
+  clusters. This shell command helps you configure your CircleCI.
 
   Note: you can use the following commands to extract the token and
   certificate (you'll need
