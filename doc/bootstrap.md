@@ -41,7 +41,7 @@ curl -sSL https://raw.githubusercontent.com/jobteaser/circleci/master/utils/conf
 
 The `configure-project` script populates the CircleCI project with
 `K8S_USER_TOKEN_STAGING` and `K8S_USER_TOKEN_PROD` environment variable.
-There variables are used to etablish an authenticated connection to the
+These variables are used to establish an authenticated connection to the
 Kubernetes cluster. Don't forget to use the right context `deploy_staging` / 
 `deploy_prod` in your CircleCI deployment job.
 
