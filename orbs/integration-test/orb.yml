@@ -175,7 +175,10 @@ commands:
             INDEX_HTML=$(grep -o '"url": *"[^"]*.index.html"' artifacts.json | grep -o '"[^"]*"$')
             echo $INDEX_HTML
             LINKS="<${CIRCLE_BUILD_URL}|Go to CircleCI job>"
-            LINKS="$LINKS\n<${INDEX_HTML}|Tests report>"
+            if [[ $INDEX_HTML != "" ]]
+            then
+              LINKS="$LINKS\n<${INDEX_HTML}|Tests report>"
+            fi
             echo $LINKS
             CONTEXT="*Project:* ${CIRCLE_PROJECT_REPONAME}\n*Branch:* ${CIRCLE_BRANCH}\n*Contact:* ${CIRCLE_USERNAME}"
             echo $CONTEXT
@@ -183,7 +186,7 @@ commands:
             echo -E "export CONTEXT=\"$CONTEXT\"" >> $BASH_ENV
             echo -E "export LINKS=\"$LINKS\"" >> $BASH_ENV
           working_directory: "~/project/integration-tests"
-          when: on_success
+          when: always
 
       - slack/notify:
           channel: << parameters.channel_id >>

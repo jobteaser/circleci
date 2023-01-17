@@ -246,7 +246,7 @@ commands:
             export STATUS="<< parameters.status >>"
             ./scripts/getArtifacts.sh
           working_directory: "~/project/privacy/tests"
-          when: on_success
+          when: always
 
       - slack/notify:
           channel: << parameters.channel_id >>
