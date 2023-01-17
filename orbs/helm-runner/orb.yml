@@ -6,7 +6,7 @@ description: |
 executors:
   deploy:
     docker:
-      - image: ubuntu
+      - image: harbor.support.jobteaser.net/jobteaser/circleci-helm:0.0.1
     resource_class: "jobteaser/helm-v2"
 
 commands:
