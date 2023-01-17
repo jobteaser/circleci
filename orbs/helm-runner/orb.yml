@@ -5,8 +5,9 @@ description: |
 
 executors:
   deploy:
-    machine: true
-    resource_class: "jobteaser/helm"
+    docker:
+      - image: ubuntu
+    resource_class: "jobteaser/helm-v2"
 
 commands:
   configure_kubernetes_client:
