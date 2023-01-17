@@ -5,8 +5,9 @@ description: |
 
 executors:
   deploy:
-    machine: true
-    resource_class: "jobteaser/helm"
+    docker:
+      - image: harbor.support.jobteaser.net/jobteaser/circleci-helm:0.0.1
+    resource_class: "jobteaser/helm-v2"
 
 commands:
   configure_kubernetes_client:
